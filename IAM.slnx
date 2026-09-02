@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="IAM.API/IAM.API.csproj" />
+  <Project Path="IAM.UI/IAM.UI.csproj" />
+</Solution>

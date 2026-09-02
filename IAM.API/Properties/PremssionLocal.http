@@ -1,0 +1,21 @@
+@token =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjEiLCJuYW1lIjoiSUFNIEFkbWluIiwiZXhwIjoxNzc4NDkzNDIyfQ.Hr30SvBay42JvGS--JNVNDVH7blwS7raJbREij6wy5k
+
+POST http://localhost:5298/Permission
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "PermissionName": "server1-network",
+    "Type": 1
+}
+###
+GET  http://localhost:5298/permission
+
+###
+POST http://localhost:5298/permission/1/add-permission-computer
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "PermissionName": "Domain Computer"
+}

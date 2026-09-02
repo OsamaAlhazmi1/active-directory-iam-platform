@@ -1,0 +1,195 @@
+@page "/computers/{Id:int}"
+@rendermode InteractiveServer
+
+@using IAM.UI.Services
+@using IAM.UI.DTOs
+
+@inject ApiService Api
+@inject NavigationManager Nav
+
+<div class="profile-header mb-4">
+    <h2 class="m-0">💻 @computer?.ComputerName</h2>
+</div>
+
+@if (!loaded)
+{
+    <div class="card p-3">Loading...</div>
+}
+else if (computer is not null)
+{
+    <!-- COMPUTER INFO -->
+    <div class="card p-3 mb-3">
+
+        <div class="d-flex justify-content-between align-items-start mb-3">
+
+            <div>
+                <h5 class="mb-1">💻 Computer Information</h5>
+
+                <div class="text-muted small">
+                    Active Directory Computer Object Details
+                </div>
+            </div>
+
+            <span class="app-badge app-badge-blue">
+                Domain Joined(UI only)
+            </span>
+
+        </div>
+
+        <div class="row g-3">
+
+            <div class="col-md-6">
+                <div class="border rounded p-3 h-100">
+                    <div class="text-muted small mb-1">COMPUTER ID</div>
+                    <div class="fw-semibold">@computer.ComputerId</div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="border rounded p-3 h-100">
+                    <div class="text-muted small mb-1">COMPUTER NAME</div>
+                    <div class="fw-semibold">@computer.ComputerName</div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="border rounded p-3 h-100">
+                    <div class="text-muted small mb-1">ACCOUNT STATUS(UI only)</div>
+                    <div class="fw-semibold text-success">Enabled</div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="border rounded p-3 h-100">
+                    <div class="text-muted small mb-1">ORGANIZATIONAL UNIT(UI only)</div>
+                    <div class="fw-semibold">
+                        OU=Computers,DC=company,DC=local
+                    </div>
+                </div>
+            </div>
+
+
+
+        </div>
+
+    </div>
+    <!-- COMPUTER OPERATIONS -->
+    <div class="card p-3 mb-3">
+
+        <h5 class="mb-3">🛠️ Computer Operations</h5>
+
+        <div class="d-flex flex-wrap gap-2">
+
+            <button class="btn btn-outline-danger btn-sm">
+                Disable Computer
+            </button>
+
+            <button class="btn btn-outline-success btn-sm">
+                Enable Computer
+            </button>
+
+            <button class="btn btn-outline-primary btn-sm">
+                Move Computer to OU
+            </button>
+
+
+
+        </div>
+
+        <div class="text-muted small mt-3">
+            UI only — Active Directory actions not connected yet.
+        </div>
+
+    </div>
+
+    <!-- PERMISSIONS -->
+    <div class="card p-3 mb-3">
+
+        <h5>🔑 Permissions</h5>
+
+        @if (computer.ComputerPremssions.Length == 0)
+        {
+            <p>No permissions</p>
+        }
+        else
+        {
+            <ul>
+                @foreach (var p in computer.ComputerPremssions)
+                {
+                    <li>@p</li>
+                }
+            </ul>
+        }
+
+    </div>
+
+    <!-- GROUPS -->
+    <div class="card p-3">
+
+        <h5>👥 Groups</h5>
+
+        @if (computer.ComputerGroups.Length == 0)
+        {
+            <p>No groups assigned</p>
+        }
+        else
+        {
+            <div class="d-flex flex-wrap gap-2">
+
+                @foreach (var g in computer.ComputerGroups)
+                {
+                    <span class="click-badge group-badge" style="cursor:pointer" @onclick="() => GoToGroup(g)">
+                        @g
+                    </span>
+                }
+
+            </div>
+        }
+
+    </div>
+}
+else
+{
+    <div class="card p-3 text-danger">
+        Computer not found
+    </div>
+}
+
+@code {
+
+    [Parameter]
+    public int Id { get; set; }
+
+    bool loaded = false;
+
+    ComputerSummaryDto? computer;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var res = await Api.GetAsync($"computers/details-Computer/{Id}");
+
+        if (res.IsSuccessStatusCode)
+        {
+            var result =
+                await res.Content.ReadFromJsonAsync<ApiResponseDTO<ComputerSummaryDto>>();
+
+            computer = result?.Data;
+        }
+
+        loaded = true;
+    }
+
+    void GoToGroup(string groupName)
+    {
+        Nav.NavigateTo($"/groups/{groupName}");
+    }
+
+    public class ComputerSummaryDto
+    {
+        public int ComputerId { get; set; }
+        public string ComputerName { get; set; } = "";
+
+        public string[] ComputerPremssions { get; set; } = [];
+        public string[] ComputerGroups { get; set; } = [];
+    }
+}

@@ -1,0 +1,30 @@
+@token =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjEiLCJuYW1lIjoiSUFNIEFkbWluIiwiZXhwIjoxNzc4NDg0MjQ2fQ.jYW5-3fh7lkxVaX1dtjcLqjmi1a5AdDHPmthv_IGEHc
+POST http://localhost:5298/Computers
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "ComputerName" : "serverlocal_1"
+
+}
+
+###
+POST http://localhost:5298/Computers/1/add-permission
+Authorization: Bearer {{token}}
+Content-Type: application/json 
+
+{
+    "PermissionName" : "Domain computer"
+}
+###
+POST  http://localhost:5298/Computers/request-access
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "ComputerName" : "serverlocal_1"
+
+}
+
+###
+GET http://localhost:5298/Computers/details-Computer/1

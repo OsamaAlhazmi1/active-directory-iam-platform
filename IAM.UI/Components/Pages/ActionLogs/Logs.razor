@@ -1,0 +1,176 @@
+@page "/logs"
+@rendermode InteractiveServer
+
+@using IAM.UI.Services
+@using IAM.UI.DTOs
+
+@inject ApiService Api
+
+<h3 class="mb-4">Activity Logs</h3>
+
+@if (!loaded)
+{
+    <div class="card p-3">
+        Loading logs...
+    </div>
+}
+else if (logs.Count == 0)
+{
+    <div class="card p-3">
+        No logs found
+    </div>
+}
+else
+{
+    <div class="d-flex flex-column gap-3">
+
+        @foreach (var log in logs)
+        {
+            <div class="app-card log-card"
+                 @onclick="() => ToggleLog(log.Id)">
+
+                <!-- TOP -->
+                <div class="d-flex justify-content-between align-items-start mb-3">
+
+                    <div>
+
+                        <div class="app-card-title">
+                            👤 @log.ActionCreatedByUserName
+                        </div>
+
+                        <div class="text-muted small mt-1">
+                            @log.CreatedAt.ToString("yyyy-MM-dd hh:mm tt")
+                        </div>
+
+                    </div>
+
+                    <span class="app-badge app-badge-blue">
+                        @log.Action_Type
+                    </span>
+
+                </div>
+
+                <!-- EXPANDED -->
+                @if (openedLogId == log.Id)
+                {
+                    <div class="log-details mt-3">
+
+                        <div class="log-row">
+                            <span class="log-label">Log ID</span>
+                            <span>@log.Id</span>
+                        </div>
+
+                        <div class="log-row">
+                            <span class="log-label">Action Type</span>
+                            <span>@log.Action_Type</span>
+                        </div>
+
+                        <div class="log-row">
+                            <span class="log-label">Created By</span>
+                            <span>@log.ActionCreatedByUserName</span>
+                        </div>
+
+                        <div class="log-row">
+                            <span class="log-label">Created At</span>
+                            <span>@log.CreatedAt</span>
+                        </div>
+
+                        @if (!string.IsNullOrEmpty(log.TargetGroupName))
+                        {
+                            <div class="log-row">
+                                <span class="log-label">Target Group</span>
+                                <span>@log.TargetGroupName</span>
+                            </div>
+                        }
+
+                        @if (!string.IsNullOrEmpty(log.TragetUserName))
+                        {
+                            <div class="log-row">
+                                <span class="log-label">Target User</span>
+                                <span>@log.TragetUserName</span>
+                            </div>
+                        }
+
+                        @if (!string.IsNullOrEmpty(log.TargetPermissionName))
+                        {
+                            <div class="log-row">
+                                <span class="log-label">Target Permission</span>
+                                <span>@log.TargetPermissionName</span>
+                            </div>
+                        }
+
+                        @if (!string.IsNullOrEmpty(log.TragetCompterName))
+                        {
+                            <div class="log-row">
+                                <span class="log-label">Target Computer</span>
+                                <span>@log.TragetCompterName</span>
+                            </div>
+                        }
+
+                    </div>
+                }
+
+            </div>
+        }
+
+    </div>
+}
+
+@code {
+
+    bool loaded = false;
+
+    int? openedLogId;
+
+    List<ActionLogDto> logs = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var res = await Api.GetAsync("actionLogs");
+
+        if (res.IsSuccessStatusCode)
+        {
+            var result =
+                await res.Content.ReadFromJsonAsync<ApiResponseDTO<List<ActionLogDto>>>();
+
+            logs = result?.Data?
+                .OrderByDescending(x => x.CreatedAt)
+                .ToList()
+                ?? new();
+        }
+
+        loaded = true;
+    }
+
+    void ToggleLog(int id)
+    {
+        if (openedLogId == id)
+            openedLogId = null;
+        else
+            openedLogId = id;
+    }
+
+    public class ActionLogDto
+    {
+        public int Id { get; set; }
+
+        public int? TragetUserId { get; set; }
+        public string? TragetUserName { get; set; }
+
+        public int? TragetCompterId { get; set; }
+        public string? TragetCompterName { get; set; }
+
+        public int? TargetPermissionId { get; set; }
+        public string? TargetPermissionName { get; set; }
+
+        public int? TargetGroupId { get; set; }
+        public string? TargetGroupName { get; set; }
+
+        public int ActionCreatedByUserId { get; set; }
+        public string ActionCreatedByUserName { get; set; } = "";
+
+        public string Action_Type { get; set; } = "";
+
+        public DateTime CreatedAt { get; set; }
+    }
+}

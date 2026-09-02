@@ -1,0 +1,238 @@
+@page "/users/{Id:int}"
+@rendermode InteractiveServer
+
+@using IAM.UI.DTOs
+@using IAM.UI.Services
+
+@inject ApiService Api
+
+<div class="profile-header mb-4">
+    <h2 class="m-0">👤 @user?.UserName</h2>
+</div>
+
+@if (!loaded)
+{
+    <div class="card p-3">Loading...</div>
+}
+else if (user is not null)
+{
+<!-- USER INFO -->
+<div class="card p-3 mb-3">
+
+    <div class="d-flex justify-content-between align-items-start mb-3">
+
+        <div>
+            <h5 class="mb-1">👤 User Information</h5>
+
+            <div class="text-muted small">
+                Active Directory Account Details
+            </div>
+        </div>
+
+        <!-- STATUS -->
+        <span class="app-badge app-badge-blue">
+            Enabled(UI Only)
+        </span>
+
+    </div>
+
+    <div class="row g-3">
+
+        <div class="col-md-6">
+
+            <div class="border rounded p-3 h-100">
+
+                <div class="text-muted small mb-1">
+                    USER ID
+                </div>
+
+                <div class="fw-semibold">
+                    @user.UserId
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="col-md-6">
+
+            <div class="border rounded p-3 h-100">
+
+                <div class="text-muted small mb-1">
+                    USERNAME
+                </div>
+
+                <div class="fw-semibold">
+                    @user.UserName
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="col-md-6">
+
+            <div class="border rounded p-3 h-100">
+
+                <div class="text-muted small mb-1">
+                    ORGANIZATIONAL UNIT(UI Only)
+                </div>
+
+                <div class="fw-semibold">
+                    OU=Users,DC=company,DC=local
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="col-md-6">
+
+            <div class="border rounded p-3 h-100">
+
+                <div class="text-muted small mb-1">
+                    ACCOUNT STATUS(UI Only)
+                </div>
+
+                <div class="fw-semibold text-success">
+                    Enabled & Unlocked
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+    <!-- ACCOUNT OPERATIONS -->
+<div class="card p-3 mb-3">
+
+    <h5 class="mb-3">🛠️ Account Operations</h5>
+
+    <div class="d-flex flex-wrap gap-2">
+
+        <button class="btn btn-outline-danger btn-sm">
+            Disable User
+        </button>
+
+        <button class="btn btn-outline-success btn-sm">
+            Enable User
+        </button>
+
+        <button class="btn btn-outline-primary btn-sm">
+            Move User to OU
+        </button>
+
+        <button class="btn btn-outline-warning btn-sm">
+            Reset Password
+        </button>
+
+        <button class="btn btn-outline-dark btn-sm">
+            Unlock Account
+        </button>
+
+    </div>
+
+    <div class="text-muted small mt-3">
+        UI only — backend actions not connected yet.
+    </div>
+
+</div>
+
+    <!-- PERMISSIONS -->
+    <div class="card p-3 mb-3">
+
+        <h5>🔑 Permissions</h5>
+
+        @if (user.UserPermissions.Length == 0)
+        {
+            <p>No permissions</p>
+        }
+        else
+        {
+            <ul>
+                @foreach (var p in user.UserPermissions)
+                {
+                    <li>@p</li>
+                }
+            </ul>
+        }
+
+    </div>
+
+    <!-- GROUPS  -->
+    <div class="card p-3">
+
+        <h5>👥 Groups</h5>
+
+        @if (user.UserGroups.Length == 0)
+        {
+            <p>No groups assigned</p>
+        }
+        else
+        {
+            <div class="d-flex flex-wrap gap-2">
+
+                @foreach (var g in user.UserGroups)
+                {
+                    <span class="click-badge group-badge" @onclick="() => GoToGroup(g)">
+                        @g
+                    </span>
+                }
+
+            </div>
+        }
+
+    </div>
+}
+else
+{
+    <div class="card p-3 text-danger">
+        User not found
+    </div>
+}
+
+@code {
+
+    [Parameter]
+    public int Id { get; set; }
+
+    bool loaded = false;
+
+    UserSummaryDto? user;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var response = await Api.GetAsync($"users/details-user/{Id}");
+
+        if (response.IsSuccessStatusCode)
+        {
+            var result =
+                await response.Content.ReadFromJsonAsync<ApiResponseDTO<UserSummaryDto>>();
+
+            user = result?.Data;
+        }
+
+        loaded = true;
+    }
+
+    void GoToGroup(string groupName)
+    {
+
+       Nav.NavigateTo($"/groups/{groupName}");
+    }
+
+    [Inject] NavigationManager Nav { get; set; } = default!;
+    
+    public class UserSummaryDto
+    {
+        public int UserId { get; set; }
+
+        public string UserName { get; set; } = "";
+
+        public string[] UserPermissions { get; set; } = [];
+
+        public string[] UserGroups { get; set; } = [];
+    }
+}

@@ -1,0 +1,92 @@
+﻿@page "/login"
+@using IAM.UI.Services
+@rendermode InteractiveServer
+
+@inject ApiService Api
+@inject TokenService Token
+@inject NavigationManager Nav
+
+<div class="d-flex justify-content-center align-items-center vh-100 bg-light">
+
+    <div class="card shadow-sm p-4" style="width: 360px; border-radius: 12px;">
+
+        <!-- TITLE -->
+        <h4 class="text-center mb-4 fw-bold">Login</h4>
+
+        <!-- USERNAME -->
+        <div class="mb-3">
+            <label class="form-label">Username</label>
+            <input class="form-control" @bind="model.UserName" />
+        </div>
+
+        <!-- PASSWORD -->
+        <div class="mb-3">
+            <label class="form-label">Password</label>
+            <input type="password" class="form-control" @bind="model.Password" />
+        </div>
+
+        <!-- BUTTONS -->
+        <div class="d-flex gap-2">
+
+            <button class="btn btn-primary w-100" @onclick="LoginUser">
+                Login
+            </button>
+
+            <button class="btn btn-outline-success w-100" @onclick="GoRegister">
+                Register
+            </button>
+
+        </div>
+
+        <!-- ERROR -->
+        @if (!string.IsNullOrEmpty(message))
+        {
+            <p class="text-danger text-center mt-3 mb-0">
+                @message
+            </p>
+        }
+
+    </div>
+
+</div>
+
+@code {
+
+    LoginRequest model = new();
+    string message = "";
+
+    async Task LoginUser()
+    {
+        var response = await Api.PostAsync("login", model);
+
+        if (response.IsSuccessStatusCode)
+        {
+            var result =
+                await response.Content.ReadFromJsonAsync<ApiResponse<string>>();
+
+            await Token.Set(result!.Data);
+            Nav.NavigateTo("/", forceLoad: true);
+        }
+        else
+        {
+            message = "Login failed";
+        }
+    }
+
+    public class LoginRequest
+    {
+        public string UserName { get; set; } = "";
+        public string Password { get; set; } = "";
+    }
+
+    public class ApiResponse<T>
+    {
+        public bool Success { get; set; }
+        public string Message { get; set; } = "";
+        public T Data { get; set; } = default!;
+    }
+    void GoRegister()
+    {
+        Nav.NavigateTo("/register");
+    }
+}

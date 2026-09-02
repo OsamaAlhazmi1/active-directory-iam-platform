@@ -1,0 +1,593 @@
+@page "/usersAD/{SamAccountName}"
+@rendermode InteractiveServer
+
+@using IAM.UI.Services
+@using IAM.UI.DTOs
+
+@inject ApiService Api
+@inject NavigationManager Nav
+
+<div class="profile-header mb-4">
+    <h2 class="m-0">👤 @user?.DisplayName</h2>
+</div>
+
+@if (showOperationPopup)
+{
+    <div class="popup-overlay">
+
+        <div class="popup-card">
+
+            <div class="d-flex justify-content-between align-items-center mb-3">
+
+                <h5 class="m-0">@popupTitle</h5>
+
+                @if (!operationLoading)
+                {
+                    <button class="btn-close" @onclick="CloseOperationPopup">
+                    </button>
+                }
+
+            </div>
+
+            @if (operationLoading)
+            {
+                <div class="text-center p-3">
+
+                    <div class="spinner-border text-primary mb-3"></div>
+
+                    <div>
+                        Processing request...
+                    </div>
+
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-info">
+                    @operationMessage
+                </div>
+
+                <button class="btn btn-primary w-100" @onclick="CloseOperationPopup">
+                    Close
+                </button>
+            }
+
+        </div>
+
+    </div>
+}
+
+@if (showResetPasswordPopup)
+{
+    <div class="popup-overlay">
+
+        <div class="popup-card">
+
+            <div class="d-flex justify-content-between align-items-center mb-3">
+
+                <h5 class="m-0">Reset Password</h5>
+
+                @if (!resetPasswordLoading)
+                {
+                    <button class="btn-close" @onclick="CloseResetPasswordPopup">
+                    </button>
+                }
+
+            </div>
+
+            @if (resetPasswordLoading)
+            {
+                <div class="text-center p-3">
+
+                    <div class="spinner-border text-primary mb-3"></div>
+
+                    <div>
+                        Resetting password...
+                    </div>
+
+                </div>
+            }
+            else if (!resetPasswordDone)
+            {
+                <label class="form-label">
+                    New Password
+                </label>
+
+                <input class="form-control mb-3"
+                       type="password"
+                       placeholder="Enter new password"
+                       @bind="newPassword" />
+
+                <label class="form-label">
+                    Confirm Password
+                </label>
+
+                <input class="form-control mb-3"
+                       type="password"
+                       placeholder="Confirm new password"
+                       @bind="confirmPassword" />
+
+                @if (!string.IsNullOrWhiteSpace(resetPasswordMessage))
+                {
+                    <div class="alert alert-warning py-2">
+                        @resetPasswordMessage
+                    </div>
+                }
+
+                <button class="btn btn-warning w-100"
+                        @onclick="ResetPassword">
+                    Reset Password
+                </button>
+            }
+            else
+            {
+                <div class="alert alert-info">
+                    @resetPasswordMessage
+                </div>
+
+                <button class="btn btn-primary w-100"
+                        @onclick="CloseResetPasswordPopup">
+                    Close
+                </button>
+            }
+
+        </div>
+
+    </div>
+}
+
+@if (!loaded)
+{
+    <div class="card p-3">Loading...</div>
+}
+else if (user is not null)
+{
+    <!-- USER INFO -->
+    <div class="card p-3 mb-3">
+
+        <div class="d-flex justify-content-between align-items-start mb-3">
+
+            <div>
+                <h5 class="mb-1">👤 Active Directory User Information</h5>
+
+                <div class="text-muted small">
+                    Data loaded directly from Active Directory
+                </div>
+            </div>
+
+            @if (user.Enabled)
+            {
+                <span class="app-badge app-badge-blue">
+                    🟢 Enabled
+                </span>
+            }
+            else
+            {
+                <span class="app-badge app-badge-gray">
+                    🔴 Disabled
+                </span>
+            }
+
+        </div>
+
+        <div class="row g-3">
+
+            <div class="col-md-6">
+
+                <div class="border rounded p-3 h-100">
+
+                    <div class="text-muted small mb-1">
+                        SAM ACCOUNT NAME
+                    </div>
+
+                    <div class="fw-semibold">
+                        @user.SamAccountName
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="col-md-6">
+
+                <div class="border rounded p-3 h-100">
+
+                    <div class="text-muted small mb-1">
+                        DISPLAY NAME
+                    </div>
+
+                    <div class="fw-semibold">
+                        @user.DisplayName
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="col-md-6">
+
+                <div class="border rounded p-3 h-100">
+
+                    <div class="text-muted small mb-1">
+                        EMAIL
+                    </div>
+
+                    <div class="fw-semibold">
+                        @(string.IsNullOrWhiteSpace(user.Email)
+                            ? "No email"
+                            : user.Email)
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="col-md-6">
+
+                <div class="border rounded p-3 h-100">
+
+                    <div class="text-muted small mb-1">
+                        EMPLOYEE ID
+                    </div>
+
+                    <div class="fw-semibold">
+                        @(string.IsNullOrWhiteSpace(user.EmployeID)
+                            ? "Not assigned"
+                            : user.EmployeID)
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="col-md-6">
+
+                <div class="border rounded p-3 h-100">
+
+                    <div class="text-muted small mb-1">
+                        ACCOUNT STATUS
+                    </div>
+
+                    @if (user.Enabled && !user.LockedOut)
+                    {
+                        <div class="fw-semibold text-success">
+                            Enabled & Unlocked
+                        </div>
+                    }
+                    else if (!user.Enabled)
+                    {
+                        <div class="fw-semibold text-danger">
+                            Disabled
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="fw-semibold text-warning">
+                            Locked Out
+                        </div>
+                    }
+
+                </div>
+
+            </div>
+
+            <div class="col-md-6">
+
+                <div class="border rounded p-3 h-100">
+
+                    <div class="text-muted small mb-1">
+                        DISTINGUISHED NAME
+                    </div>
+
+                    <div class="fw-semibold small">
+                        @user.DistinguishedName
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- ACCOUNT OPERATIONS -->
+    <div class="card p-3 mb-3">
+
+        <h5 class="mb-3">🛠️ Account Operations</h5>
+
+        <div class="d-flex flex-wrap gap-2">
+
+            @if (user.Enabled)
+            {
+                <button class="btn btn-outline-danger btn-sm" @onclick="OpenDisablePopup">
+                    Disable User
+                </button>
+            }
+            else
+            {
+                <button class="btn btn-outline-success btn-sm" @onclick="OpenEnablePopup">
+                    Enable User
+                </button>
+            }
+
+            <button class="btn btn-outline-primary btn-sm">
+                Move User to OU
+            </button>
+
+            <button class="btn btn-outline-warning btn-sm"
+                    @onclick="OpenResetPasswordPopup">
+                Reset Password
+            </button>
+
+            <button class="btn btn-outline-dark btn-sm">
+                Unlock Account
+            </button>
+
+        </div>
+
+        <div class="text-muted small mt-3">
+            Enable, Disable, and Reset Password are connected to AD.
+            Other actions are UI only.
+        </div>
+
+    </div>
+
+    <!-- MEMBER OF -->
+    <div class="card p-3">
+
+        <h5>👥 Member Of</h5>
+
+        @if (user.MemberOf.Length == 0)
+        {
+            <p>No group memberships</p>
+        }
+        else
+        {
+            <div class="d-flex flex-wrap gap-2">
+
+                @foreach (var group in user.MemberOf)
+                {
+                    <span class="click-badge group-badge">
+                        @GetGroupName(group)
+                    </span>
+                }
+
+            </div>
+        }
+
+    </div>
+}
+else
+{
+    <div class="card p-3 text-danger">
+        AD user not found
+    </div>
+}
+
+@code {
+
+    [Parameter]
+    public string SamAccountName { get; set; } = "";
+
+    bool loaded = false;
+
+    bool showOperationPopup = false;
+    bool operationLoading = false;
+
+    string popupTitle = "";
+    string? operationMessage;
+
+    bool showResetPasswordPopup = false;
+    bool resetPasswordLoading = false;
+    bool resetPasswordDone = false;
+
+    string newPassword = "";
+    string confirmPassword = "";
+    string? resetPasswordMessage;
+
+    ADUserDetailsDTO? user;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadUser();
+    }
+
+    async Task LoadUser()
+    {
+        loaded = false;
+
+        await RefreshUser();
+
+        loaded = true;
+    }
+
+    async Task RefreshUser()
+    {
+        var response =
+            await Api.GetAsync($"ad/users/{SamAccountName}/details");
+
+        if (response.IsSuccessStatusCode)
+        {
+            var result =
+                await response.Content
+                    .ReadFromJsonAsync<ApiResponseDTO<ADUserDetailsDTO>>();
+
+            user = result?.Data;
+        }
+    }
+
+    void OpenEnablePopup()
+    {
+        popupTitle = "Enable User";
+        _ = EnableUser();
+    }
+
+    void OpenDisablePopup()
+    {
+        popupTitle = "Disable User";
+        _ = DisableUser();
+    }
+
+    void CloseOperationPopup()
+    {
+        showOperationPopup = false;
+    }
+
+    async Task EnableUser()
+    {
+        showOperationPopup = true;
+        operationLoading = true;
+        operationMessage = null;
+        StateHasChanged();
+
+        var response =
+            await Api.PostAsync(
+                $"ad/users/{SamAccountName}/enable",
+                new { });
+
+        if (response.IsSuccessStatusCode)
+        {
+            operationMessage = "User enabled successfully";
+
+            await RefreshUser();
+        }
+        else
+        {
+            operationMessage =
+                await response.Content.ReadAsStringAsync();
+        }
+
+        operationLoading = false;
+        StateHasChanged();
+    }
+
+    async Task DisableUser()
+    {
+        showOperationPopup = true;
+        operationLoading = true;
+        operationMessage = null;
+        StateHasChanged();
+
+        var response =
+            await Api.PostAsync(
+                $"ad/users/{SamAccountName}/disable",
+                new { });
+
+        if (response.IsSuccessStatusCode)
+        {
+            operationMessage = "User disabled successfully";
+
+            await RefreshUser();
+        }
+        else
+        {
+            operationMessage =
+                await response.Content.ReadAsStringAsync();
+        }
+
+        operationLoading = false;
+        StateHasChanged();
+    }
+
+    void OpenResetPasswordPopup()
+    {
+        showResetPasswordPopup = true;
+        resetPasswordLoading = false;
+        resetPasswordDone = false;
+
+        newPassword = "";
+        confirmPassword = "";
+        resetPasswordMessage = null;
+    }
+
+    void CloseResetPasswordPopup()
+    {
+        showResetPasswordPopup = false;
+    }
+
+    async Task ResetPassword()
+    {
+        resetPasswordMessage = null;
+
+        if (string.IsNullOrWhiteSpace(newPassword))
+        {
+            resetPasswordMessage = "New password is required";
+            return;
+        }
+
+        if (newPassword != confirmPassword)
+        {
+            resetPasswordMessage = "Passwords do not match";
+            return;
+        }
+
+        resetPasswordLoading = true;
+        StateHasChanged();
+
+        var dto = new ResetPasswordDTO
+        {
+            NewPassword = newPassword
+        };
+
+        var response =
+            await Api.PostAsync(
+                $"ad/users/{SamAccountName}/reset-password",
+                dto);
+
+        if (response.IsSuccessStatusCode)
+        {
+            resetPasswordMessage = "Password reset successfully";
+            resetPasswordDone = true;
+        }
+        else
+        {
+            resetPasswordMessage =
+                await response.Content.ReadAsStringAsync();
+
+            resetPasswordDone = true;
+        }
+
+        resetPasswordLoading = false;
+        StateHasChanged();
+    }
+
+    string GetGroupName(string distinguishedName)
+    {
+        if (string.IsNullOrWhiteSpace(distinguishedName))
+            return "";
+
+        var firstPart =
+            distinguishedName.Split(',')
+                .FirstOrDefault();
+
+        return firstPart?
+            .Replace("CN=", "")
+            .Replace("OU=", "")
+            ?? distinguishedName;
+    }
+
+    public class ResetPasswordDTO
+    {
+        public string NewPassword { get; set; } = "";
+    }
+
+    public class ADUserDetailsDTO
+    {
+        public string SamAccountName { get; set; } = "";
+
+        public string DisplayName { get; set; } = "";
+
+        public string DistinguishedName { get; set; } = "";
+
+        public string Email { get; set; } = "";
+
+        public string EmployeID { get; set; } = "";
+
+        public string[] MemberOf { get; set; } = [];
+
+        public bool Enabled { get; set; }
+
+        public bool LockedOut { get; set; }
+    }
+}

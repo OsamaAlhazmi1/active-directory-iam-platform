@@ -1,0 +1,182 @@
+﻿@page "/users"
+@rendermode InteractiveServer
+
+@using IAM.UI.Services
+@using IAM.UI.DTOs
+
+@inject ApiService Api
+@inject NavigationManager Nav
+
+<h3 class="mb-3">Users</h3>
+
+<!-- SEARCH -->
+<div class="card p-3 mb-4">
+
+    <div class="d-flex gap-2">
+
+        <input class="form-control"
+               placeholder="Search by ID or Username..."
+               @bind="searchText"
+               @bind:event="oninput" />
+
+        <button class="btn btn-primary" @onclick="Search">Search</button>
+
+        <button class="btn btn-secondary" @onclick="Reset">Reset</button>
+
+    </div>
+
+</div>
+
+@if (!loaded)
+{
+    <div class="card p-3">Loading...</div>
+}
+else
+{
+    <div class="row g-3">
+
+        @foreach (var user in DisplayUsers)
+        {
+            <div class="col-md-4">
+
+                <div class="app-card"
+                     @onclick="() => OpenProfile(user.UserId)">
+
+                    <div class="app-card-title">
+                        👤 @user.UserName
+                    </div>
+
+                    <span class="app-badge app-badge-dark">
+                        ID: @user.UserId
+                    </span>
+
+                </div>
+
+            </div>
+        }
+
+    </div>
+
+    <!-- PAGINATION -->
+    @if (!isSearching)
+    {
+        <div class="mt-4 d-flex justify-content-center gap-3">
+
+            <button class="btn btn-outline-primary btn-sm"
+                    @onclick="PrevPage"
+                    disabled="@IsFirstPage">
+                ◀
+            </button>
+
+            <span>Page @CurrentPage of @TotalPages</span>
+
+            <button class="btn btn-outline-primary btn-sm"
+                    @onclick="NextPage"
+                    disabled="@IsLastPage">
+                ▶
+            </button>
+
+        </div>
+    }
+}
+
+@code {
+
+    List<UserDto> users = new();
+    List<UserDto> searchResult = new();
+
+    string searchText = "";
+    bool isSearching = false;
+    bool loaded = false;
+
+    const int PageSize = 15;
+    int CurrentPage = 1;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadUsers();
+    }
+
+    async Task LoadUsers()
+    {
+        var res = await Api.GetAsync("users");
+
+        if (res.IsSuccessStatusCode)
+        {
+            var result =
+                await res.Content.ReadFromJsonAsync<ApiResponseDTO<List<UserDto>>>();
+
+            users = result?.Data ?? new();
+        }
+
+        loaded = true;
+    }
+
+    void OpenProfile(int id)
+        => Nav.NavigateTo($"/users/{id}");
+
+    async Task Search()
+    {
+        if (string.IsNullOrWhiteSpace(searchText))
+            return;
+
+        isSearching = true;
+
+        if (int.TryParse(searchText, out int id))
+        {
+            var res = await Api.GetAsync($"users/{id}");
+
+            if (res.IsSuccessStatusCode)
+            {
+                var result =
+                    await res.Content.ReadFromJsonAsync<ApiResponseDTO<UserDto>>();
+
+                searchResult = result?.Data != null
+                    ? new List<UserDto> { result.Data }
+                    : new();
+            }
+        }
+        else
+        {
+            var res = await Api.GetAsync($"users/by-name/{searchText}");
+
+            if (res.IsSuccessStatusCode)
+            {
+                var result =
+                    await res.Content.ReadFromJsonAsync<ApiResponseDTO<UserDto>>();
+
+                searchResult = result?.Data != null
+                    ? new List<UserDto> { result.Data }
+                    : new();
+            }
+        }
+    }
+
+    void Reset()
+    {
+        searchText = "";
+        isSearching = false;
+        searchResult.Clear();
+    }
+
+    IEnumerable<UserDto> DisplayUsers =>
+        isSearching ? searchResult : PagedUsers;
+
+    IEnumerable<UserDto> PagedUsers =>
+        users.Skip((CurrentPage - 1) * PageSize).Take(PageSize);
+
+    int TotalPages =>
+        (int)Math.Ceiling(users.Count / (double)PageSize);
+
+    bool IsFirstPage => CurrentPage == 1;
+    bool IsLastPage => CurrentPage >= TotalPages;
+
+    void NextPage() { if (!IsLastPage) CurrentPage++; }
+    void PrevPage() { if (!IsFirstPage) CurrentPage--; }
+
+    public class UserDto
+    {
+        public int UserId { get; set; }
+        public string UserName { get; set; } = "";
+    }
+}

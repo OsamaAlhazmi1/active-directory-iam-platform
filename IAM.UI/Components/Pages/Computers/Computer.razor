@@ -1,0 +1,356 @@
+﻿@page "/computers"
+@rendermode InteractiveServer
+
+@using IAM.UI.Services
+@using IAM.UI.DTOs
+
+@inject ApiService Api
+@inject NavigationManager Nav
+
+<h3 class="mb-3">Computers</h3>
+
+<!-- SEARCH -->
+<div class="card p-3 mb-3">
+
+    <div class="d-flex gap-2">
+
+        <input class="form-control"
+               placeholder="Search by ID or Computer Name..."
+               @bind="searchText"
+               @bind:event="oninput" />
+
+        <button class="btn btn-primary" @onclick="Search">Search</button>
+
+        <button class="btn btn-secondary" @onclick="Reset">Reset</button>
+
+    </div>
+
+</div>
+
+<!-- ACTION BUTTONS -->
+<div class="mb-4 d-flex gap-2">
+
+    <button class="btn btn-success add-btn"
+            @onclick="OpenCreatePopup">
+        + Add Computer
+    </button>
+
+    <button class="btn btn-warning"
+            @onclick="OpenRequestAccessPopup">
+        Request Access
+    </button>
+
+</div>
+
+@if (!loaded)
+{
+    <div class="card p-3">Loading...</div>
+}
+else
+{
+    <div class="row g-3">
+
+        @foreach (var c in DisplayComputers)
+        {
+            <div class="col-md-4">
+
+                <div class="app-card"
+                     @onclick="() => OpenProfile(c.ComputerID)">
+
+                    <div class="app-card-title">
+                        💻 @c.ComputerName
+                    </div>
+
+                    <span class="app-badge app-badge-dark">
+                        ID: @c.ComputerID
+                    </span>
+
+                </div>
+
+            </div>
+        }
+
+    </div>
+}
+
+<!-- ================= CREATE COMPUTER POPUP ================= -->
+@if (showCreatePopup)
+{
+    <div class="popup-overlay">
+
+        <div class="popup-card">
+
+            <div class="d-flex justify-content-between align-items-center mb-3">
+
+                <h5 class="m-0">Create Computer</h5>
+
+                <button class="btn-close" @onclick="CloseCreatePopup"></button>
+
+            </div>
+
+            <label class="form-label">Computer Name</label>
+
+            <input class="form-control mb-3"
+                   @bind="newComputerName"
+                   placeholder="Enter computer name" />
+
+            @if (!string.IsNullOrEmpty(createMessage))
+            {
+                <div class="alert @(createSuccess ? "alert-success" : "alert-danger") py-2">
+                    @createMessage
+                </div>
+            }
+
+            <button class="btn btn-success w-100"
+                    @onclick="CreateComputer">
+                Create
+            </button>
+
+        </div>
+
+    </div>
+}
+
+<!-- ================= REQUEST ACCESS POPUP ================= -->
+@if (showAccessPopup)
+{
+    <div class="popup-overlay">
+
+        <div class="popup-card">
+
+            <div class="d-flex justify-content-between align-items-center mb-3">
+
+                <h5 class="m-0">Request Access</h5>
+
+                <button class="btn-close" @onclick="CloseAccessPopup"></button>
+
+            </div>
+
+            <label class="form-label">Select Computer</label>
+
+            <select class="form-select mb-3"
+                    @bind="selectedComputerId">
+
+                <option value="">-- Select Computer --</option>
+
+                @foreach (var c in allComputers)
+                {
+                    <option value="@c.ComputerID">
+                        @c.ComputerName (ID: @c.ComputerID)
+                    </option>
+                }
+
+            </select>
+
+            <button class="btn btn-warning w-100"
+                    @onclick="RequestAccess">
+                Request Access
+            </button>
+
+            @if (!string.IsNullOrEmpty(message))
+            {
+                <div class="alert alert-info mt-3">
+                    @message
+                </div>
+            }
+
+        </div>
+
+    </div>
+}
+
+@code {
+
+    List<ComputerDto> computers = new();
+    List<ComputerDto> searchResult = new();
+    List<ComputerDto> allComputers = new();
+
+    string searchText = "";
+    bool isSearching = false;
+    bool loaded = false;
+
+    bool showCreatePopup = false;
+    bool showAccessPopup = false;
+
+    string newComputerName = "";
+
+    string? createMessage;
+    bool createSuccess = false;
+
+    string? message;
+
+    int? selectedComputerId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadComputers();
+    }
+
+    async Task LoadComputers()
+    {
+        var res = await Api.GetAsync("computers");
+
+        if (res.IsSuccessStatusCode)
+        {
+            var result =
+                await res.Content.ReadFromJsonAsync<ApiResponseDTO<List<ComputerDto>>>();
+
+            computers = result?.Data ?? new();
+            allComputers = result?.Data ?? new();
+        }
+
+        loaded = true;
+    }
+
+    void OpenProfile(int id)
+        => Nav.NavigateTo($"/computers/{id}");
+
+    // ================= SEARCH =================
+    async Task Search()
+    {
+        if (string.IsNullOrWhiteSpace(searchText))
+            return;
+
+        isSearching = true;
+
+        if (int.TryParse(searchText, out int id))
+        {
+            var res = await Api.GetAsync($"computers/{id}");
+
+            var result =
+                await res.Content.ReadFromJsonAsync<ApiResponseDTO<ComputerDto>>();
+
+            searchResult = result?.Data != null
+                ? new List<ComputerDto> { result.Data }
+                : new();
+        }
+        else
+        {
+            var res = await Api.GetAsync($"computers/by-name/{searchText}");
+
+            var result =
+                await res.Content.ReadFromJsonAsync<ApiResponseDTO<ComputerDto>>();
+
+            searchResult = result?.Data != null
+                ? new List<ComputerDto> { result.Data }
+                : new();
+        }
+    }
+
+    void Reset()
+    {
+        searchText = "";
+        isSearching = false;
+        searchResult.Clear();
+    }
+
+    IEnumerable<ComputerDto> DisplayComputers =>
+        isSearching ? searchResult : computers;
+
+    // ================= CREATE COMPUTER =================
+    void OpenCreatePopup()
+    {
+        showCreatePopup = true;
+        newComputerName = "";
+        createMessage = null;
+        createSuccess = false;
+    }
+
+    void CloseCreatePopup()
+        => showCreatePopup = false;
+
+    async Task CreateComputer()
+    {
+        createMessage = null;
+        createSuccess = false;
+
+        if (string.IsNullOrWhiteSpace(newComputerName))
+        {
+            createMessage = "Computer name is required";
+            return;
+        }
+
+        var dto = new
+        {
+            ComputerName = newComputerName
+        };
+
+        var res = await Api.PostAsync("computers", dto);
+
+        var content = await res.Content.ReadAsStringAsync();
+
+        if (res.IsSuccessStatusCode)
+        {
+            createSuccess = true;
+            createMessage = "Computer created successfully";
+
+            await LoadComputers();
+
+            await Task.Delay(1000);
+
+            showCreatePopup = false;
+        }
+        else
+        {
+            createSuccess = false;
+
+            try
+            {
+                var error =
+                    await res.Content.ReadFromJsonAsync<ApiResponseDTO<string>>();
+
+                createMessage = error?.Message ?? content;
+            }
+            catch
+            {
+                createMessage = content;
+            }
+        }
+    }
+
+    // ================= REQUEST ACCESS =================
+    void OpenRequestAccessPopup()
+    {
+        showAccessPopup = true;
+        selectedComputerId = null;
+        message = null;
+    }
+
+    void CloseAccessPopup()
+        => showAccessPopup = false;
+
+    async Task RequestAccess()
+    {
+        message = null;
+
+        var selectedComputer = allComputers
+            .FirstOrDefault(x => x.ComputerID == selectedComputerId);
+
+        if (selectedComputer is null)
+        {
+            message = "Please select a computer";
+            return;
+        }
+
+        var dto = new RequestAccessDTO
+        {
+            ComputerName = selectedComputer.ComputerName
+        };
+
+        var res = await Api.PostAsync("computers/request-access", dto);
+
+        message = await res.Content.ReadAsStringAsync();
+    }
+
+    // ================= DTO =================
+    public class ComputerDto
+    {
+        public int ComputerID { get; set; }
+        public string ComputerName { get; set; } = "";
+    }
+
+    public class RequestAccessDTO
+    {
+        public string ComputerName { get; set; } = "";
+    }
+}

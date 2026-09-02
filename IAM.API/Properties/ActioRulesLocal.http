@@ -1,0 +1,13 @@
+@token =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjEiLCJuYW1lIjoiSUFNIEFkbWluIiwiZXhwIjoxNzc4NDg0MjQ2fQ.jYW5-3fh7lkxVaX1dtjcLqjmi1a5AdDHPmthv_IGEHc
+POST http://localhost:5298/actionRules
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "ActionType": 12,
+    "TargetType": 1,
+    "RequiredPermissionName": "IAM Admin"
+}
+
+###
+GET http://localhost:5298/actionRules

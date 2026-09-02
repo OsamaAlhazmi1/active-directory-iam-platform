@@ -1,0 +1,119 @@
+﻿@inherits LayoutComponentBase
+
+@using IAM.UI.Services
+@using Microsoft.AspNetCore.Components.Routing
+
+@implements IDisposable
+
+@inject TokenService Token
+@inject NavigationManager Nav
+
+<div class="layout-shell">
+
+    <aside class="app-sidebar">
+
+        <div class="sidebar-brand">IAM Portal</div>
+
+        <nav class="sidebar-nav">
+            <NavLink class="sidebar-link" href="/" Match="NavLinkMatch.All">Dashboard</NavLink>
+            <NavLink class="sidebar-link" href="/users">Users</NavLink>
+            <NavLink class="sidebar-link" href="/usersAD">UserAD</NavLink>
+            <NavLink class="sidebar-link" href="/groups">Groups</NavLink>
+            <NavLink class="sidebar-link" href="/computers">Computers</NavLink>
+            <NavLink class="sidebar-link" href="/permissions">Permissions</NavLink>
+            <NavLink class="sidebar-link" href="/action-rules">Rules</NavLink>
+            <NavLink class="sidebar-link" href="/logs">Logs</NavLink>
+        </nav>
+
+    </aside>
+
+    <main class="app-main">
+
+        <header class="app-topbar">
+
+            <div>
+                @if (isLoggedIn)
+                {
+                    <span class="status-pill online">● Signed In</span>
+                }
+                else
+                {
+                    <span class="status-pill offline">● Guest</span>
+                }
+            </div>
+
+            <div>
+                @if (isLoggedIn)
+                {
+                    <button class="btn btn-outline-danger btn-sm"
+                            @onclick="Logout">
+                        Logout
+                    </button>
+                }
+                else
+                {
+                    <button class="btn btn-outline-primary btn-sm"
+                            @onclick="GoLogin">
+                        Login
+                    </button>
+                }
+            </div>
+
+        </header>
+
+        <section class="page-body">
+            @Body
+        </section>
+
+    </main>
+
+</div>
+
+@code {
+
+    bool isLoggedIn;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Nav.LocationChanged += OnLocationChanged;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+
+        await CheckAuth();
+        StateHasChanged();
+    }
+
+    async void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        await CheckAuth();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async Task CheckAuth()
+    {
+        var token = await Token.Get();
+        isLoggedIn = !string.IsNullOrWhiteSpace(token);
+    }
+
+    void GoLogin()
+    {
+        Nav.NavigateTo("/login");
+    }
+
+    async Task Logout()
+    {
+        await Token.Clear();
+
+        isLoggedIn = false;
+
+        Nav.NavigateTo("/", forceLoad: true);
+    }
+
+    public void Dispose()
+    {
+        Nav.LocationChanged -= OnLocationChanged;
+    }
+}

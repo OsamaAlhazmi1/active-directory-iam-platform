@@ -1,0 +1,376 @@
+@page "/permissions"
+@rendermode InteractiveServer
+
+@using IAM.UI.Services
+@using IAM.UI.DTOs
+
+@inject ApiService Api
+@inject NavigationManager Nav
+
+<h3 class="mb-3">Permissions</h3>
+
+<!-- ACTION BAR -->
+<div class="card p-3 mb-3">
+
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+
+        <div>
+            <h5 class="m-0">Permission Management</h5>
+            <div class="text-muted small">
+                Manage system permissions and assignments
+            </div>
+        </div>
+
+        <div class="d-flex gap-2">
+
+            <button class="btn btn-success" @onclick="OpenCreatePopup">
+                + Add Permission
+            </button>
+
+            <button class="btn btn-primary" @onclick="OpenAssignPopup">
+                Assign Permission
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- SEARCH -->
+<div class="card p-3 mb-3">
+
+    <div class="d-flex gap-2">
+
+        <input class="form-control" placeholder="Search by ID or Permission Name..." @bind="searchText"
+               @bind:event="oninput" />
+
+        <button class="btn btn-primary" @onclick="Search">Search</button>
+
+        <button class="btn btn-secondary" @onclick="Reset">Reset</button>
+
+    </div>
+
+</div>
+
+@if (!loaded)
+{
+    <div class="card p-3">Loading...</div>
+}
+else
+{
+    <div class="row g-3">
+
+        @foreach (var p in DisplayPermissions)
+        {
+            <div class="col-md-4">
+
+                <div class="app-card">
+
+                    <div class="app-card-title">
+                        🔑 @p.PermissionName
+                    </div>
+
+                    <span class="app-badge app-badge-dark">
+                        Type: @p.Permission_Type
+                    </span>
+
+                </div>
+
+            </div>
+        }
+
+    </div>
+}
+
+<!-- ================= CREATE PERMISSION POPUP ================= -->
+@if (showCreatePopup)
+{
+    <div class="popup-overlay">
+
+        <div class="popup-card">
+
+            <div class="d-flex justify-content-between align-items-center mb-3">
+
+                <h5 class="m-0">Create Permission</h5>
+
+                <button class="btn-close" @onclick="CloseCreatePopup"></button>
+
+            </div>
+
+            <!-- NAME -->
+            <label class="form-label">Permission Name</label>
+
+            <input class="form-control mb-3" @bind="createModel.PermissionName" placeholder="Example: IAM Admin" />
+
+            <!-- TYPE (IMPORTANT FIX) -->
+            <label class="form-label">Permission Type</label>
+
+            <select class="form-select mb-3" @bind="createModel.Permission_Type">
+
+                @foreach (var type in Enum.GetValues<PermissionType>())
+                {
+                    <option value="@type">
+                        @type
+                    </option>
+                }
+
+            </select>
+
+            <button class="btn btn-success w-100" @onclick="CreatePermission">
+                Create Permission
+            </button>
+
+            @if (!string.IsNullOrEmpty(message))
+            {
+                <div class="alert alert-info mt-3">
+                    @message
+                </div>
+            }
+
+        </div>
+
+    </div>
+}
+
+<!-- ================= ASSIGN PERMISSION POPUP ================= -->
+@if (showAssignPopup)
+{
+    <div class="popup-overlay">
+
+        <div class="popup-card">
+
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="m-0">Assign Permission</h5>
+                <button class="btn-close" @onclick="CloseAssignPopup"></button>
+            </div>
+
+            <label class="form-label">Target ID</label>
+
+            <input class="form-control mb-2" type="number" @bind="assignTargetId"
+                   placeholder="Enter User, Computer, or Group ID" />
+
+            <label class="form-label">Permission Name</label>
+
+            <input class="form-control mb-3" @bind="assignPermissionName" placeholder="Example: IAM Admin" />
+
+            <div class="d-flex gap-2 mb-3">
+
+                <button class="btn btn-outline-primary w-33" @onclick="AssignToUser">
+                    To User
+                </button>
+
+                <button class="btn btn-outline-dark w-33" @onclick="AssignToComputer">
+                    To Computer
+                </button>
+
+                <button class="btn btn-outline-success w-33" @onclick="AssignToGroup">
+                    To Group
+                </button>
+
+            </div>
+
+            <div class="text-muted small mb-3">
+                Group permissions are inherited through group membership. They are not copied directly to users or
+                computers.
+            </div>
+
+            @if (!string.IsNullOrEmpty(message))
+            {
+                <div class="alert alert-info">
+                    @message
+                </div>
+            }
+
+        </div>
+
+    </div>
+
+}
+
+@code {
+
+    List<PermissionDto> permissions = new();
+    List<PermissionDto> searchResult = new();
+
+    string searchText = "";
+    bool isSearching = false;
+    bool loaded = false;
+
+    bool showCreatePopup = false;
+    bool showAssignPopup = false;
+
+    string message = "";
+
+    // CREATE
+    CreatePermissionDTO createModel = new();
+
+    // ASSIGN
+    int assignTargetId;
+    string assignPermissionName = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadPermissions();
+    }
+
+    async Task LoadPermissions()
+    {
+        var res = await Api.GetAsync("permissions");
+
+        if (res.IsSuccessStatusCode)
+        {
+            var result =
+                await res.Content.ReadFromJsonAsync<ApiResponseDTO<List<PermissionDto>>>();
+
+            permissions = result?.Data ?? new();
+        }
+
+        loaded = true;
+    }
+
+    IEnumerable<PermissionDto> DisplayPermissions =>
+        isSearching ? searchResult : permissions;
+
+    // ================= SEARCH =================
+    async Task Search()
+    {
+        if (string.IsNullOrWhiteSpace(searchText))
+            return;
+
+        isSearching = true;
+
+        if (int.TryParse(searchText, out int id))
+        {
+            var res = await Api.GetAsync($"permissions/{id}");
+
+            var result =
+                await res.Content.ReadFromJsonAsync<ApiResponseDTO<PermissionDto>>();
+
+            searchResult = result?.Data != null
+                ? new List<PermissionDto> { result.Data }
+                : new();
+        }
+        else
+        {
+            var res = await Api.GetAsync($"permissions/by-name/{searchText}");
+
+            var result =
+                await res.Content.ReadFromJsonAsync<ApiResponseDTO<PermissionDto>>();
+
+            searchResult = result?.Data != null
+                ? new List<PermissionDto> { result.Data }
+                : new();
+        }
+    }
+
+    void Reset()
+    {
+        searchText = "";
+        isSearching = false;
+        searchResult.Clear();
+    }
+
+    // ================= CREATE =================
+    void OpenCreatePopup()
+    {
+        showCreatePopup = true;
+        message = "";
+        createModel = new();
+    }
+
+    void CloseCreatePopup()
+        => showCreatePopup = false;
+
+    async Task CreatePermission()
+    {
+        var res = await Api.PostAsync("permissions", createModel);
+
+        message = await res.Content.ReadAsStringAsync();
+
+        if (res.IsSuccessStatusCode)
+        {
+            await LoadPermissions();
+        }
+    }
+
+    // ================= ASSIGN =================
+    void OpenAssignPopup()
+    {
+        showAssignPopup = true;
+        message = "";
+    }
+
+    void CloseAssignPopup()
+        => showAssignPopup = false;
+
+    async Task AssignToUser()
+    {
+        var dto = new AddToPremissionDTO
+        {
+            PermissionName = assignPermissionName
+        };
+
+        var res = await Api.PostAsync(
+            $"permissions/{assignTargetId}/add-permission-user",
+            dto
+        );
+
+        message = await res.Content.ReadAsStringAsync();
+    }
+
+    async Task AssignToComputer()
+    {
+        var dto = new AddToPremissionDTO
+        {
+            PermissionName = assignPermissionName
+        };
+
+        var res = await Api.PostAsync(
+            $"permissions/{assignTargetId}/add-permission-computer",
+            dto
+        );
+
+        message = await res.Content.ReadAsStringAsync();
+    }
+    async Task AssignToGroup()
+    {
+        var dto = new AddToPremissionDTO
+        {
+            PermissionName = assignPermissionName
+        };
+
+        var res = await Api.PostAsync(
+            $"permissions/{assignTargetId}/add-permission-group",
+            dto
+        );
+
+        message = await res.Content.ReadAsStringAsync();
+    }
+
+    // ================= DTOs =================
+    public class PermissionDto
+    {
+        public int PermissionID { get; set; }
+        public string PermissionName { get; set; } = "";
+        public string Permission_Type { get; set; } = "";
+    }
+
+    public class CreatePermissionDTO
+    {
+        public string PermissionName { get; set; } = "";
+        public PermissionType Permission_Type { get; set; }
+    }
+
+    public enum PermissionType
+    {
+        User,
+        Computer,
+        Group
+    }
+
+    public class AddToPremissionDTO
+    {
+        public string PermissionName { get; set; } = "";
+    }
+}

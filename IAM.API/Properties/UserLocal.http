@@ -1,0 +1,51 @@
+@token =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjEiLCJuYW1lIjoiSUFNIEFkbWluIiwiZXhwIjoxNzc4NjU3NDc0fQ.x981oUXsKvOJvXloFGmqyYFJJpr2koVIFwm2VmstPHA
+POST http://localhost:5298/register
+Content-Type: application/json
+
+{
+    "UserName" : "IAM Admin", 
+    "Password": "123456789"
+}
+###
+POST http://localhost:5298/login
+Content-Type: application/json
+
+{
+    "UserName" : "IAM Admin", 
+    "Password": "123456789"
+}
+
+###
+POST http://localhost:5298/Users/2/add-permission
+Authorization: Bearer {{token}}
+Content-Type: application/json 
+
+{
+    "PermissionName" : "Domain User"
+}
+###
+GET http://localhost:5298/p/1/
+
+###
+GET http://localhost:5298/me
+Authorization: Bearer {{token}}
+
+
+###
+GET http://localhost:5298/users/summary-user/2
+###
+GET http://localhost:5298/ad/users
+###
+GET http://localhost:5298/ad/users/oaalhazmi/details
+###
+POST http://localhost:5298/ad/users/oaalhazmi/enable
+###
+POST http://localhost:5298/ad/users/oaalhazmi/disable
+
+### 
+POST http://localhost:5298/ad/users/oaalhazmi/reset-password
+Content-Type: application/json
+
+{
+    "NewPassoword":"TempP@ssw0rd2025!"
+}

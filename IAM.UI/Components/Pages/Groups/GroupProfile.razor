@@ -1,0 +1,550 @@
+@page "/groups/{Id:int}"
+@page "/groups/{groupName}"
+@rendermode InteractiveServer
+
+@using IAM.UI.Services
+@using IAM.UI.DTOs
+
+@inject ApiService Api
+@inject NavigationManager Nav
+@inject TokenService Token
+
+<h3 class="mb-3">Group Profile</h3>
+
+@if (!loaded)
+{
+    <div class="card p-3">Loading...</div>
+}
+else if (group is not null)
+{
+    <!-- HEADER -->
+    <div class="profile-header mb-4">
+
+        <div class="d-flex justify-content-between align-items-center">
+
+            <div>
+
+                <h2 class="m-0">
+                    👥 @group.GroupName
+                </h2>
+
+                <div class="mt-2">
+
+                    <span class="app-badge app-badge-dark">
+                        ID: @group.Id
+                    </span>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+    <!-- GROUP INFO -->
+    <div class="card p-3 mb-3">
+
+        <div class="d-flex justify-content-between align-items-start mb-3">
+
+            <div>
+
+                <h5 class="mb-1">👥 Group Information</h5>
+
+                <div class="text-muted small">
+                    Active Directory Group Object Details
+                </div>
+
+            </div>
+
+            <span class="app-badge app-badge-blue">
+                Security Group(UI Only)
+            </span>
+
+        </div>
+
+        <div class="row g-3">
+
+            <div class="col-md-6">
+
+                <div class="border rounded p-3 h-100">
+
+                    <div class="text-muted small mb-1">
+                        GROUP ID
+                    </div>
+
+                    <div class="fw-semibold">
+                        @group.Id
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="col-md-6">
+
+                <div class="border rounded p-3 h-100">
+
+                    <div class="text-muted small mb-1">
+                        GROUP NAME
+                    </div>
+
+                    <div class="fw-semibold">
+                        @group.GroupName
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="col-md-6">
+
+                <div class="border rounded p-3 h-100">
+
+                    <div class="text-muted small mb-1">
+                        GROUP TYPE(UI Only)
+                    </div>
+
+                    <div class="fw-semibold">
+                        Security
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <div class="col-md-6">
+
+                <div class="border rounded p-3 h-100">
+
+                    <div class="text-muted small mb-1">
+                        ORGANIZATIONAL UNIT(UI Only)
+                    </div>
+
+                    <div class="fw-semibold">
+                        OU=Groups,DC=company,DC=local
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+    <!-- GROUP OPERATIONS -->
+    <div class="card p-3 mb-3">
+
+        <h5 class="mb-3">🛠️ Group Operations</h5>
+
+        <div class="d-flex flex-wrap gap-2">
+
+            <button class="btn btn-outline-primary btn-sm">
+                Rename Group
+            </button>
+
+            <button class="btn btn-outline-success btn-sm">
+                Move Group to OU
+            </button>
+
+        </div>
+
+        <div class="text-muted small mt-3">
+            UI only — Active Directory actions not connected yet.
+        </div>
+
+    </div>
+    <!-- USERS -->
+    <div class="card p-3 mb-3">
+
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="m-0">👤 Users</h5>
+
+            <button class="btn btn-primary btn-sm" @onclick="OpenPopup">
+                + Add User
+            </button>
+        </div>
+
+        @if (group.GroupUsers.Count == 0)
+        {
+            <p>No users in this group</p>
+        }
+        else
+        {
+            <div class="d-flex flex-wrap gap-2">
+
+                @foreach (var u in group.GroupUsers)
+                {
+                    <span class="click-badge user-badge" style="cursor:pointer" @onclick="() => OpenUser(u.UserId)">
+                        @u.UserName
+                    </span>
+                }
+
+            </div>
+        }
+    </div>
+
+    <!-- COMPUTERS -->
+    <div class="card p-3 mb-3">
+
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="m-0">💻 Computers</h5>
+
+            <button class="btn btn-primary btn-sm" @onclick="OpenComputerPopup">
+                + Add Computer
+            </button>
+        </div>
+
+        @if (group.GroupComputers.Count == 0)
+        {
+            <p>No computers</p>
+        }
+        else
+        {
+            <div class="d-flex flex-wrap gap-2">
+
+                @foreach (var c in group.GroupComputers)
+                {
+                
+                    <span class="click-badge user-badge" style="cursor:pointer" @onclick="() => OpenComputer(c.ComputerID)">
+                        @c.ComputerName
+                    </span>
+                }
+
+            </div>
+        }
+    </div>
+
+    <!-- PERMISSIONS -->
+    <div class="card p-3 mb-3">
+        <h5>🔑 Permissions</h5>
+
+        @if (group.GroupPermissions.Count == 0)
+        {
+            <p>No permissions</p>
+        }
+        else
+        {
+            <div class="d-flex flex-wrap gap-2">
+
+                @foreach (var p in group.GroupPermissions)
+                {
+                    <span class="click-badge group-badge">
+                        @p
+                    </span>
+                }
+
+            </div>
+        }
+    </div>
+}
+
+<!-- ================= USER POPUP ================= -->
+@if (showPopup)
+{
+    <div class="popup-overlay">
+        <div class="popup-card">
+
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="m-0">Add User</h5>
+                <button class="btn-close" @onclick="ClosePopup"></button>
+            </div>
+
+            <div class="d-flex gap-2 mb-2">
+
+                <input class="form-control" placeholder="Search by ID or Username" @bind="searchText" />
+
+                <button class="btn btn-primary" @onclick="SearchUser">
+                    Search
+                </button>
+
+            </div>
+
+            @if (!string.IsNullOrEmpty(popupMessage))
+            {
+                <div class="alert alert-info py-1 mt-2">
+                    @popupMessage
+                </div>
+            }
+
+            @if (searchDone)
+            {
+                @if (searchResults.Count == 0)
+                {
+                    <p class="text-muted">No users found</p>
+                }
+                else
+                {
+                    <div class="d-flex flex-column gap-2 mt-2">
+
+                        @foreach (var u in searchResults)
+                        {
+                            <div class="search-user-card">
+
+                                <div>
+                                    <b>@u.UserName</b>
+                                    <div class="text-muted small">ID: @u.UserId</div>
+                                </div>
+
+                                <button class="btn btn-success btn-sm" @onclick="() => AddUserToGroup(u.UserId)">
+                                    Add
+                                </button>
+
+                            </div>
+                        }
+
+                    </div>
+                }
+            }
+
+        </div>
+    </div>
+}
+
+<!-- ================= COMPUTER POPUP ================= -->
+@if (showComputerPopup)
+{
+    <div class="popup-overlay">
+        <div class="popup-card">
+
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="m-0">Add Computer</h5>
+                <button class="btn-close" @onclick="CloseComputerPopup"></button>
+            </div>
+
+            <div class="d-flex gap-2 mb-2">
+
+                <input class="form-control" placeholder="Search computer by ID or name" @bind="computerSearchText" />
+
+                <button class="btn btn-primary" @onclick="SearchComputer">
+                    Search
+                </button>
+
+            </div>
+
+            @if (!string.IsNullOrEmpty(computerPopupMessage))
+            {
+                <div class="alert alert-info py-1 mt-2">
+                    @computerPopupMessage
+                </div>
+            }
+
+            @if (computerSearchDone)
+            {
+                @if (computerResults.Count == 0)
+                {
+                    <p class="text-muted">No computers found</p>
+                }
+                else
+                {
+                    <div class="d-flex flex-column gap-2 mt-2">
+
+                        @foreach (var c in computerResults)
+                        {
+                            <div class="search-user-card">
+
+                                <div>
+                                    <b>@c.ComputerName</b>
+                                    <div class="text-muted small">ID: @c.ComputerID</div>
+                                </div>
+
+                                <button class="btn btn-success btn-sm" @onclick="() => AddComputerToGroup(c.ComputerID)">
+                                    Add
+                                </button>
+
+                            </div>
+                        }
+
+                    </div>
+                }
+            }
+
+        </div>
+    </div>
+}
+
+@code {
+
+    [Parameter] public int? Id { get; set; }
+    [Parameter] public string? groupName { get; set; }
+
+    bool loaded = false;
+
+    GroupDto? group;
+
+    bool showPopup = false;
+    bool showComputerPopup = false;
+
+    bool searchDone = false;
+    bool computerSearchDone = false;
+
+    string searchText = "";
+    string computerSearchText = "";
+
+    List<UserSummaryDto> searchResults = new();
+    List<ComputerSummaryDto> computerResults = new();
+
+    string? popupMessage;
+    string? computerPopupMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadGroup();
+    }
+
+    async Task LoadGroup()
+    {
+        HttpResponseMessage res;
+
+        if (Id.HasValue)
+            res = await Api.GetAsync($"groups/details-group/{Id.Value}");
+        else
+            res = await Api.GetAsync($"groups/details-group-by-name/{groupName}");
+
+        if (res.IsSuccessStatusCode)
+        {
+            var result =
+                await res.Content.ReadFromJsonAsync<ApiResponseDTO<GroupDto>>();
+
+            group = result?.Data;
+        }
+
+        loaded = true;
+    }
+
+    // ================= USERS =================
+    void OpenPopup()
+    {
+        showPopup = true;
+        searchText = "";
+        searchResults.Clear();
+        searchDone = false;
+        popupMessage = null;
+    }
+
+    void ClosePopup() => showPopup = false;
+
+    async Task SearchUser()
+    {
+        searchDone = true;
+        searchResults.Clear();
+
+        HttpResponseMessage res;
+
+        if (int.TryParse(searchText, out int id))
+            res = await Api.GetAsync($"users/{id}");
+        else
+            res = await Api.GetAsync($"users/by-name/{searchText}");
+
+        if (res.IsSuccessStatusCode)
+        {
+            var result =
+                await res.Content.ReadFromJsonAsync<ApiResponseDTO<UserSummaryDto>>();
+
+            if (result?.Data != null)
+                searchResults.Add(result.Data);
+        }
+    }
+
+    async Task AddUserToGroup(int userId)
+    {
+        var dto = new AddToGroupUserDTO
+        {
+            UserId = userId,
+            GroupId = group!.Id
+        };
+
+        var res = await Api.PostAsync("groups/add-user-group", dto);
+
+        popupMessage = res.IsSuccessStatusCode
+            ? "User added successfully"
+            : await res.Content.ReadAsStringAsync();
+
+        await LoadGroup();
+    }
+
+    void OpenUser(int userId)
+        => Nav.NavigateTo($"/users/{userId}");
+
+    void OpenComputer(int computerId)
+        => Nav.NavigateTo($"/computers/{computerId}");
+
+    // ================= COMPUTERS =================
+    void OpenComputerPopup()
+    {
+        showComputerPopup = true;
+        computerSearchText = "";
+        computerResults.Clear();
+        computerSearchDone = false;
+        computerPopupMessage = null;
+    }
+
+    void CloseComputerPopup() => showComputerPopup = false;
+
+    async Task SearchComputer()
+    {
+        computerSearchDone = true;
+        computerResults.Clear();
+
+        HttpResponseMessage res;
+
+        if (int.TryParse(computerSearchText, out int id))
+            res = await Api.GetAsync($"computers/{id}");
+        else
+            res = await Api.GetAsync($"computers/by-name/{computerSearchText}");
+
+        if (res.IsSuccessStatusCode)
+        {
+            var result =
+                await res.Content.ReadFromJsonAsync<ApiResponseDTO<ComputerSummaryDto>>();
+
+            if (result?.Data != null)
+                computerResults.Add(result.Data);
+        }
+    }
+
+    async Task AddComputerToGroup(int computerId)
+    {
+        var dto = new
+        {
+            ComputerId = computerId,
+            GroupId = group!.Id
+        };
+
+        var res = await Api.PostAsync("groups/add-computer-group", dto);
+
+        computerPopupMessage = res.IsSuccessStatusCode
+            ? "Computer added successfully"
+            : await res.Content.ReadAsStringAsync();
+
+        await LoadGroup();
+    }
+
+    // ================= DTOs =================
+    public class GroupDto
+    {
+        public int Id { get; set; }
+        public string GroupName { get; set; } = "";
+        public List<UserSummaryDto> GroupUsers { get; set; } = new();
+        public List<ComputerSummaryDto> GroupComputers { get; set; } = new();
+        public List<string> GroupPermissions { get; set; } = new();
+    }
+
+    public class UserSummaryDto
+    {
+        public int UserId { get; set; }
+        public string UserName { get; set; } = "";
+    }
+
+    public class ComputerSummaryDto
+    {
+        public int ComputerID { get; set; }
+        public string ComputerName { get; set; } = "";
+    }
+
+    public class AddToGroupUserDTO
+    {
+        public int UserId { get; set; }
+        public int GroupId { get; set; }
+    }
+}

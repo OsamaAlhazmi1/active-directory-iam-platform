@@ -1,0 +1,106 @@
+﻿@page "/register"
+@rendermode InteractiveServer
+
+@using IAM.UI.DTOs
+@using IAM.UI.Services
+
+@inject ApiService Api
+@inject NavigationManager Nav
+@inject TokenService Token
+
+<div class="d-flex justify-content-center align-items-center vh-100 bg-light">
+
+    <div class="card shadow-sm p-4" style="width: 360px; border-radius: 12px;">
+
+        <!-- TITLE -->
+        <h4 class="text-center mb-4 fw-bold">Register</h4>
+
+        <!-- USERNAME -->
+        <div class="mb-3">
+            <label class="form-label">Username</label>
+            <input class="form-control" placeholder="Username"
+                   @bind="model.UserName" />
+        </div>
+
+        <!-- PASSWORD -->
+        <div class="mb-3">
+            <label class="form-label">Password</label>
+            <input type="password" class="form-control"
+                   placeholder="Password"
+                   @bind="model.Password" />
+        </div>
+
+        <!-- BUTTON -->
+        <button class="btn btn-success w-100" @onclick="RegisterUser">
+            Create Account
+        </button>
+
+        <!-- SUCCESS -->
+        @if (!string.IsNullOrEmpty(successMessage))
+        {
+            <p class="text-success text-center mt-3 mb-0">
+                @successMessage
+            </p>
+        }
+
+        <!-- ERROR -->
+        @if (!string.IsNullOrEmpty(message))
+        {
+            <p class="text-danger text-center mt-3 mb-0">
+                @message
+            </p>
+        }
+
+        <!-- BACK TO LOGIN -->
+        <div class="text-center mt-3">
+            <a href="/login" class="text-decoration-none">
+                Already have an account? Login
+            </a>
+        </div>
+
+    </div>
+
+</div>
+@code {
+
+    CreateUserDTO model = new();
+
+    string? message;
+    string? successMessage;
+
+    async Task RegisterUser()
+    {
+        message = null;
+        successMessage = null;
+
+        var response = await Api.PostAsync("register", model);
+
+        if (response.IsSuccessStatusCode)
+        {
+            var result =
+                await response.Content.ReadFromJsonAsync<ApiResponseDTO<object>>();
+
+            successMessage = result?.Message;
+
+            // IMPORTANT: ensure user is logged out after register
+            await Token.Clear();
+
+            await Task.Delay(800);
+
+            Nav.NavigateTo("/login");
+        }
+        else
+        {
+            var error =
+                await response.Content.ReadFromJsonAsync<ApiResponseDTO<object>>();
+
+            message = error?.Message ?? "Registration failed";
+        }
+    }
+
+    public class CreateUserDTO
+    {
+        public string UserName { get; set; } = "";
+        public string Password { get; set; } = "";
+    }
+}

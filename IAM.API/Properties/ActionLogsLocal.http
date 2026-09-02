@@ -1,0 +1,5 @@
+@token =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjEiLCJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1lIjoibXNoYXJpXzIyIiwiZXhwIjoxNzc2OTQ2Mzk1fQ.0Apm9CsNJIST--vh26DwT5HYJAUUfoBpSJ-WFjYMTh0
+
+
+GET http://localhost:5298/actionLogs
+

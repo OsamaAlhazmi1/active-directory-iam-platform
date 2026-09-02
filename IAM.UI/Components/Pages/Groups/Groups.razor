@@ -1,0 +1,387 @@
+@page "/groups"
+@rendermode InteractiveServer
+
+@using IAM.UI.Services
+@using IAM.UI.DTOs
+
+@inject ApiService Api
+@inject NavigationManager Nav
+
+<h3 class="mb-3">Groups</h3>
+
+<!-- SEARCH -->
+<div class="card p-3 mb-3">
+
+    <div class="d-flex gap-2">
+
+        <input class="form-control" placeholder="Search by ID or Group Name..." @bind="searchText"
+               @bind:event="oninput" />
+
+        <button class="btn btn-primary" @onclick="Search">Search</button>
+
+        <button class="btn btn-secondary" @onclick="Reset">Reset</button>
+
+    </div>
+
+</div>
+
+<!-- CREATE BUTTON -->
+<div class="mb-4">
+    <button class="btn btn-success add-btn" type="button" @onclick="OpenCreateGroupPopup">
+        + Create New Group
+    </button>
+</div>
+
+@if (!loaded)
+{
+    <div class="card p-3">Loading...</div>
+}
+else
+{
+    <div class="row g-3">
+
+        @foreach (var group in DisplayGroups)
+        {
+            <div class="col-md-4">
+
+                <div class="app-card" @onclick="() => OpenProfile(group.Id)">
+
+                    <div class="app-card-title">
+                        👥 @group.GroupName
+                    </div>
+
+                    <div class="mb-2">
+                        <span class="app-badge app-badge-dark">
+                            ID: @group.Id
+                        </span>
+                    </div>
+
+                    @if (group.UsersCount > 0)
+                    {
+                        <span class="app-badge app-badge-blue">
+                            👤 @group.UsersCount Users
+                        </span>
+                    }
+
+                    @if (group.ComputersCount > 0)
+                    {
+                        <span class="app-badge app-badge-gray">
+                            💻 @group.ComputersCount Computers
+                        </span>
+                    }
+
+                    @if (group.PermissionsCount > 0)
+                    {
+                        <span class="app-badge app-badge-dark">
+                            🔑 @group.PermissionsCount Permissions
+                        </span>
+                    }
+
+                    @if (group.UsersCount == 0 &&
+                                                                 group.ComputersCount == 0 &&
+                                                                 group.PermissionsCount == 0)
+                    {
+                        <span class="app-badge app-badge-gray">
+                            Empty Group
+                        </span>
+                    }
+
+                </div>
+
+            </div>
+        }
+
+    </div>
+
+    <!-- PAGINATION -->
+    @if (!isSearching)
+    {
+        <div class="mt-4 d-flex justify-content-center gap-3">
+
+            <button class="btn btn-outline-primary btn-sm" @onclick="PrevPage" disabled="@IsFirstPage">
+                ◀
+            </button>
+
+            <span>Page @CurrentPage of @TotalPages</span>
+
+            <button class="btn btn-outline-primary btn-sm" @onclick="NextPage" disabled="@IsLastPage">
+                ▶
+            </button>
+
+        </div>
+    }
+}
+
+<!-- ================= CREATE GROUP POPUP ================= -->
+@if (showCreatePopup)
+{
+    <div class="popup-overlay">
+
+        <div class="popup-card">
+
+            <!-- HEADER -->
+            <div class="d-flex justify-content-between align-items-center mb-3">
+
+                <h5 class="m-0">Create New Group</h5>
+
+                <button class="btn-close" @onclick="CloseCreateGroupPopup">
+                </button>
+
+            </div>
+
+            <!-- GROUP NAME -->
+            <div class="mb-3">
+
+                <label class="form-label">
+                    Group Name
+                </label>
+
+                <input class="form-control" placeholder="Enter group name" @bind="createModel.GroupName" />
+
+            </div>
+
+            <!-- TYPE -->
+            <div class="mb-3">
+
+                <label class="form-label">
+                    Group Type
+                </label>
+
+                <div class="row g-2">
+
+                    <div class="col-6">
+
+                        <div class="type-card @(createModel.GroupType == GroupType.Users ? "active" : "")"
+                             @onclick="() => SetType(GroupType.Users)">
+
+                            <div class="type-title">
+                                👤 Users
+                            </div>
+
+                            <div class="type-desc">
+                                User security group
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    <div class="col-6">
+
+                        <div class="type-card @(createModel.GroupType == GroupType.Computers ? "active" : "")"
+                             @onclick="() => SetType(GroupType.Computers)">
+
+                            <div class="type-title">
+                                💻 Computers
+                            </div>
+
+                            <div class="type-desc">
+                                Computer security group
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <!-- MESSAGE -->
+            @if (!string.IsNullOrEmpty(message))
+            {
+                <div class="alert @(isError ? "alert-danger" : "alert-success") py-2">
+                    @message
+                </div>
+            }
+
+            <!-- CREATE -->
+            <button class="btn btn-success w-100" @onclick="CreateGroup">
+                Create Group
+            </button>
+
+        </div>
+
+    </div>
+
+}
+
+@code {
+
+    List<GroupDto> groups = new();
+    List<GroupDto> searchResult = new();
+    string? message;
+    bool isError = false;
+
+    string searchText = "";
+    bool isSearching = false;
+    bool loaded = false;
+
+    bool showCreatePopup = false;
+
+    CreateGroupDTO createModel = new()
+    {
+        GroupType = GroupType.Users
+    };
+
+    const int PageSize = 15;
+    int CurrentPage = 1;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadGroups();
+    }
+
+    async Task LoadGroups()
+    {
+        var res = await Api.GetAsync("groups");
+
+        if (res.IsSuccessStatusCode)
+        {
+            var result =
+                await res.Content.ReadFromJsonAsync<ApiResponseDTO<List<GroupDto>>>();
+
+            groups = result?.Data ?? new();
+        }
+
+        loaded = true;
+    }
+
+    // NAV
+    void OpenProfile(int id)
+        => Nav.NavigateTo($"/groups/{id}");
+
+    // POPUP
+    void OpenCreateGroupPopup()
+    {
+        message = null;
+        isError = false;
+
+        createModel = new CreateGroupDTO
+        {
+            GroupType = GroupType.Users
+        };
+
+        showCreatePopup = true;
+    }
+
+    void CloseCreateGroupPopup()
+        => showCreatePopup = false;
+
+    void SetType(GroupType type)
+        => createModel.GroupType = type;
+
+    async Task CreateGroup()
+    {
+        message = null;
+        isError = false;
+
+        var res = await Api.PostAsync("groups", createModel);
+
+        var content = await res.Content.ReadAsStringAsync();
+
+        if (res.IsSuccessStatusCode)
+        {
+            message = "Group created successfully";
+
+            await LoadGroups();
+
+            await Task.Delay(1000);
+
+            showCreatePopup = false;
+        }
+        else
+        {
+            isError = true;
+
+            try
+            {
+                var error =
+                    await res.Content.ReadFromJsonAsync<ApiResponseDTO<string>>();
+
+                message = error?.Message ?? content;
+            }
+            catch
+            {
+                message = content;
+            }
+        }
+    }
+
+    // SEARCH
+    async Task Search()
+    {
+        if (string.IsNullOrWhiteSpace(searchText))
+            return;
+
+        isSearching = true;
+
+        if (int.TryParse(searchText, out int id))
+        {
+            var res = await Api.GetAsync($"groups/{id}");
+
+            var result = await res.Content
+                .ReadFromJsonAsync<ApiResponseDTO<GroupDto>>();
+
+            searchResult = result?.Data != null
+                ? new List<GroupDto> { result.Data }
+                : new();
+        }
+        else
+        {
+            var res = await Api.GetAsync($"groups/by-name/{searchText}");
+
+            var result = await res.Content
+                .ReadFromJsonAsync<ApiResponseDTO<GroupDto>>();
+
+            searchResult = result?.Data != null
+                ? new List<GroupDto> { result.Data }
+                : new();
+        }
+    }
+
+    void Reset()
+    {
+        searchText = "";
+        isSearching = false;
+        searchResult.Clear();
+    }
+
+    // PAGINATION
+    IEnumerable<GroupDto> DisplayGroups =>
+        isSearching ? searchResult : PagedGroups;
+
+    IEnumerable<GroupDto> PagedGroups =>
+        groups.Skip((CurrentPage - 1) * PageSize).Take(PageSize);
+
+    int TotalPages =>
+        (int)Math.Ceiling(groups.Count / (double)PageSize);
+
+    bool IsFirstPage => CurrentPage == 1;
+    bool IsLastPage => CurrentPage >= TotalPages;
+
+    void NextPage() { if (!IsLastPage) CurrentPage++; }
+    void PrevPage() { if (!IsFirstPage) CurrentPage--; }
+
+    // DTOs
+    public class GroupDto
+    {
+        public int Id { get; set; }
+        public string GroupName { get; set; } = "";
+        public int UsersCount { get; set; }
+        public int ComputersCount { get; set; }
+        public int PermissionsCount { get; set; }
+    }
+
+    public class CreateGroupDTO
+    {
+        public string GroupName { get; set; } = "";
+        public GroupType GroupType { get; set; }
+    }
+
+    public enum GroupType
+    {
+        Users,
+        Computers
+    }
+}

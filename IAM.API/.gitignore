@@ -1,0 +1,54 @@
+# Build output
+bin/
+obj/
+
+# Visual Studio / Rider / VS Code
+.vs/
+.idea/
+.vscode/
+
+# User-specific files
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Test results
+TestResults/
+
+# NuGet
+packages/
+
+# Local databases
+*.db
+*.db-shm
+*.db-wal
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# ASP.NET local configuration
+appsettings.Local.json
+appsettings.Development.local.json
+
+# Certificates / private keys
+*.pfx
+*.p12
+*.key
+*.pem
+
+# HTTPS development certificates
+aspnetcore-https.pfx
+
+# Publish output
+publish/

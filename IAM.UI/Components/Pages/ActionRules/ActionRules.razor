@@ -1,0 +1,384 @@
+@page "/action-rules"
+@rendermode InteractiveServer
+
+@using IAM.UI.Services
+@using IAM.UI.DTOs
+
+@inject ApiService Api
+
+<h3 class="mb-3">Action Rules</h3>
+
+<!-- SEARCH / ACTION BAR -->
+<div class="card p-3 mb-3">
+
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+
+        <div>
+            <h5 class="m-0">Authorization Rules</h5>
+            <div class="text-muted small">
+                Controls who can perform actions in the platform
+            </div>
+        </div>
+
+        <button class="btn btn-success add-btn" @onclick="OpenCreatePopup">
+            + Create New Rule
+        </button>
+
+    </div>
+
+</div>
+
+@if (!loaded)
+{
+    <div class="card p-3">Loading...</div>
+}
+else if (rules.Count == 0)
+{
+    <div class="card p-4 text-center">
+        <h5>No Rules Found</h5>
+        <div class="text-muted">
+            Create your first authorization rule
+        </div>
+    </div>
+}
+else
+{
+    <!-- RULES GRID -->
+    <div class="row g-3">
+
+        @foreach (var rule in rules)
+        {
+            <div class="col-md-6 col-lg-4">
+
+                <div class="app-card">
+
+                    <!-- HEADER -->
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+
+                        <div class="app-card-title">
+                            🔐 Rule #@rule.RuleID
+                        </div>
+
+                        <span class="app-badge app-badge-gray">
+                            ID: @rule.RuleID
+                        </span>
+
+                    </div>
+
+                    <!-- ACTION -->
+                    <div class="mb-3">
+
+                        <div class="text-muted small mb-1">
+                            ACTION
+                        </div>
+
+                        <span class="app-badge app-badge-blue">
+                            @GetActionIcon(rule.ActionType)
+                            @rule.ActionType
+                        </span>
+
+                    </div>
+
+                    <!-- TARGET -->
+                    <div class="mb-3">
+
+                        <div class="text-muted small mb-1">
+                            TARGET TYPE
+                        </div>
+
+                        <span class="app-badge app-badge-dark">
+                            @GetTargetIcon(rule.TargetType)
+                            @rule.TargetType
+                        </span>
+
+                    </div>
+
+                    <!-- REQUIRED PERMISSION -->
+                    <div>
+
+                        <div class="text-muted small mb-1">
+                            REQUIRED PERMISSION
+                        </div>
+
+                        <div class="rule-permission-box">
+
+                            <div class="fw-semibold">
+                                🛡️ @rule.RequiredPermissionName
+                            </div>
+
+                            <div class="text-muted small">
+                                Users must have this permission
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+        }
+
+    </div>
+}
+
+<!-- ================= CREATE POPUP ================= -->
+@if (showCreatePopup)
+{
+    <div class="popup-overlay">
+
+        <div class="popup-card">
+
+            <!-- HEADER -->
+            <div class="d-flex justify-content-between align-items-center mb-3">
+
+                <h5 class="m-0">Create Action Rule</h5>
+
+                <button class="btn-close" @onclick="CloseCreatePopup">
+                </button>
+
+            </div>
+
+            <!-- ACTION TYPE -->
+            <div class="mb-3">
+
+                <label class="form-label">Action Type</label>
+
+                <select class="form-select" @bind="createModel.ActionType">
+
+                    @foreach (var action in Enum.GetValues<ActionType>())
+                    {
+                        <option value="@action">
+                            @action
+                        </option>
+                    }
+
+                </select>
+
+            </div>
+
+            <!-- TARGET TYPE -->
+            <div class="mb-3">
+
+                <label class="form-label">Target Type</label>
+
+                <select class="form-select" @bind="createModel.TargetType">
+
+                    @foreach (var target in Enum.GetValues<TargetType>())
+                    {
+                        <option value="@target">
+                            @target
+                        </option>
+                    }
+
+                </select>
+
+            </div>
+
+            <!-- REQUIRED PERMISSION -->
+            <div class="mb-3">
+
+                <label class="form-label">Required Permission</label>
+
+                <input class="form-control" placeholder="Example: IAM Admin" @bind="createModel.RequiredPermissionName" />
+
+            </div>
+
+            @if (!string.IsNullOrEmpty(message))
+            {
+                <div class="alert @(isError ? "alert-danger" : "alert-success") py-2">
+                    @message
+                </div>
+            }
+
+            <!-- CREATE -->
+            <button class="btn btn-success w-100" @onclick="CreateRule">
+                Create Rule
+            </button>
+
+        </div>
+
+    </div>
+}
+
+@code {
+
+    List<ActionRuleDto> rules = new();
+    bool isError = false;
+
+    bool loaded = false;
+
+    bool showCreatePopup = false;
+
+    string? message;
+
+    CreateRuleDTO createModel = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadRules();
+    }
+
+    async Task LoadRules()
+    {
+        var res = await Api.GetAsync("actionRules");
+
+        if (res.IsSuccessStatusCode)
+        {
+            var result =
+                await res.Content.ReadFromJsonAsync<
+                    ApiResponseDTO<List<ActionRuleDto>>
+                >();
+
+            rules = result?.Data ?? new();
+        }
+
+        loaded = true;
+    }
+
+    // ================= CREATE =================
+
+    void OpenCreatePopup()
+    {
+        showCreatePopup = true;
+
+        message = null;
+
+        createModel = new CreateRuleDTO();
+    }
+
+    void CloseCreatePopup()
+    {
+        showCreatePopup = false;
+    }
+
+    async Task CreateRule()
+    {
+        message = null;
+        isError = false;
+
+        var res = await Api.PostAsync("actionRules", createModel);
+
+        var content = await res.Content.ReadAsStringAsync();
+
+        if (res.IsSuccessStatusCode)
+        {
+            message = "Rule created successfully";
+            isError = false;
+
+            await LoadRules();
+
+            await Task.Delay(1000);
+
+            CloseCreatePopup();
+        }
+        else
+        {
+            isError = true;
+
+            try
+            {
+                var error =
+                    await res.Content.ReadFromJsonAsync<ApiResponseDTO<string>>();
+
+                message = error?.Message ?? content;
+            }
+            catch
+            {
+                message = content;
+            }
+        }
+    }
+
+    // ================= HELPERS =================
+
+    string GetActionIcon(string action)
+    {
+        return action switch
+        {
+            "CreatePermission" => "➕",
+            "RemovePermission" => "❌",
+            "UpdatePermission" => "✏️",
+
+            "CreateGroup" => "👥",
+            "RemoveGroup" => "🗑️",
+            "UpdateGroup" => "🛠️",
+
+            "CreateComputer" => "💻",
+            "RemoveComputer" => "🗑️",
+            "UpdateComputer" => "🛠️",
+
+            "AssignPermission" => "🔑",
+            "AddToGroup" => "📥",
+            "RemoveFromGroup" => "📤",
+
+            "Access" => "🚪",
+
+            _ => "⚡"
+        };
+    }
+
+    string GetTargetIcon(string target)
+    {
+        return target switch
+        {
+            "User" => "👤",
+            "Computer" => "💻",
+            "Permission" => "🔑",
+            "Group" => "👥",
+            _ => "📦"
+        };
+    }
+
+    // ================= DTOs =================
+
+    public class ActionRuleDto
+    {
+        public int RuleID { get; set; }
+
+        public string ActionType { get; set; } = "";
+
+        public string TargetType { get; set; } = "";
+
+        public string RequiredPermissionName { get; set; } = "";
+    }
+
+    public class CreateRuleDTO
+    {
+        public ActionType ActionType { get; set; }
+
+        public TargetType TargetType { get; set; }
+
+        public string RequiredPermissionName { get; set; } = "";
+    }
+
+    public enum ActionType
+    {
+        CreateComputer,
+        RemoveComputer,
+        UpdateComputer,
+
+        CreatePermission,
+        RemovePermission,
+        UpdatePermission,
+
+        AssignPermission,
+
+        CreateGroup,
+        RemoveGroup,
+        UpdateGroup,
+
+        AddToGroup,
+        RemoveFromGroup,
+
+        Access
+    }
+
+    public enum TargetType
+    {
+        User,
+        Computer,
+        Permission,
+        Group
+    }
+}

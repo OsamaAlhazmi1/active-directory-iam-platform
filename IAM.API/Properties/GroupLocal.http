@@ -1,0 +1,33 @@
+@token =eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjEiLCJuYW1lIjoiSUFNIEFkbWluIiwiZXhwIjoxNzgxMDc5ODQ3fQ.y6G79dBDZArUneG15GRbzq-EV7iBGblUAGLT9tlRPho
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "GroupName" : "team_5",
+    "Type": 1
+
+}
+
+###
+GET http://localhost:5298/groups/details-group/1
+
+###
+POST http://localhost:5298/groups/add-user-group
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "UserId":19,
+    "GroupId":4
+  
+}
+###
+POST http://localhost:5298/groups/add-computer-group
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "ComputerId":1,
+    "GroupId":1
+  
+}
