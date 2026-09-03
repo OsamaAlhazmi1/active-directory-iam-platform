@@ -41,12 +41,16 @@ public static class PermissionEndpoints
                 return ApiResponse.Fail($"Permission ({dto.PermissionName}) Already Exisit", 409);
 
 
-            var allowed = await controlService.CanAccessAsync(signedUser.Id,
-            ActionRule.RuleActionType.CreatePermission,
-            ActionRule.RuleTargetType.Permission);
+
+            var ruleActionType = ActionRule.RuleActionType.AssignPermission;
+            var ruleTargetType = ActionRule.RuleTargetType.User;
+
+
+            var allowed = await controlService.CanAccessAsync(signedUser.Id, ruleActionType, ruleTargetType);
 
             if (!allowed)
-                return ApiResponse.Fail($"User ({signedUser.UserName}) Is Forbid", 403);
+                return ApiResponse.Fail($"User is unauthorized to add permission (Action = {ruleActionType.ToString()} , Taget Type = {ruleTargetType.ToString()})", 401);
+
 
 
             Permission newPermission = new()
