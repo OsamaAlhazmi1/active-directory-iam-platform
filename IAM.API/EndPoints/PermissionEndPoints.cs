@@ -29,6 +29,9 @@ public static class PermissionEndpoints
 
             var signedUser = await http.GetCurrentUserAsync(dbcontext);
 
+            if (signedUser == null)
+                  return ApiResponse.Fail("No User is Signed", 409);
+
 
             if (string.IsNullOrWhiteSpace(dto.PermissionName))
                 return ApiResponse.Fail("Permission Name can't be null or empty", 409);
@@ -106,6 +109,10 @@ public static class PermissionEndpoints
 
             var signedUser = await http.GetCurrentUserAsync(dbcontext);
 
+            if (signedUser == null)
+                  return ApiResponse.Fail("No User is Signed", 409);
+
+
             var ruleActionType = ActionRule.RuleActionType.AssignPermission;
             var ruleTargetType = ActionRule.RuleTargetType.User;
 
@@ -178,6 +185,10 @@ public static class PermissionEndpoints
         {
             var signedUser = await http.GetCurrentUserAsync(dbcontext);
 
+            if (signedUser == null)
+                  return ApiResponse.Fail("No User is Signed", 409);
+
+
             var ruleActionType = ActionRule.RuleActionType.AssignPermission;
             var ruleTargetType = ActionRule.RuleTargetType.Computer;
 
@@ -243,6 +254,10 @@ public static class PermissionEndpoints
         , HttpContext http) =>
         {
             var signedUser = await http.GetCurrentUserAsync(dbcontext);
+
+            if (signedUser == null)
+                  return ApiResponse.Fail("No User is Signed", 409);
+
 
             var ruleActionType = ActionRule.RuleActionType.AssignPermission;
             var ruleTargetType = ActionRule.RuleTargetType.Group;
