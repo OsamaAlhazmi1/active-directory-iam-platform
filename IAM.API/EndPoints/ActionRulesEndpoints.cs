@@ -25,6 +25,10 @@ public static class ActionRulesEndpoints
         HttpContext http) =>
         {
             var signedUser = await http.GetCurrentUserAsync(dbContext);
+
+            if (signedUser == null)
+                return ApiResponse.Fail("No User is Signed", 409);
+                
             if (signedUser.UserName != "IAM Admin")
                 return ApiResponse.Fail("Only IAM Admin Can Make New Rule", 403);
 

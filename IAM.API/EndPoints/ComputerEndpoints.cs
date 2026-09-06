@@ -42,7 +42,7 @@ public static class ComputerEndpoints
             if (computer == null)
                 return ApiResponse.Fail($"Computer With {id} Not Found", 404);
 
-            var dto = new ComputerSummaryDTO (
+            var dto = new ComputerSummaryDTO(
                 computer.Id,
                 computer.ComputerName
             );
@@ -108,6 +108,10 @@ public static class ComputerEndpoints
             IAccessControlService controlService) =>
         {
             var signedUser = await http.GetCurrentUserAsync(dbcontext);
+
+            if (signedUser == null)
+                return ApiResponse.Fail("No User is Signed", 409);
+                
             var ruleActionType = ActionRule.RuleActionType.CreateComputer;
             var ruleTargetType = ActionRule.RuleTargetType.Computer;
 
@@ -190,6 +194,9 @@ public static class ComputerEndpoints
             IAccessControlService controlService) =>
         {
             var signedUser = await http.GetCurrentUserAsync(dbcontext);
+            if (signedUser == null)
+                return ApiResponse.Fail("No User is Signed", 409);
+
             var ruleActionType = ActionRule.RuleActionType.Access;
             var ruleTargetType = ActionRule.RuleTargetType.Computer;
 

@@ -27,6 +27,10 @@ public static class GroupEndpoints
         IAccessControlService controlService) =>
         {
             var signedUser = await http.GetCurrentUserAsync(dbcontext);
+
+            if (signedUser == null)
+                return ApiResponse.Fail("No User is Signed", 409);
+
             var ruleActionType = ActionRule.RuleActionType.CreateGroup;
             var ruleTargetType = ActionRule.RuleTargetType.Group;
             var allowed = await controlService.CanAccessAsync(signedUser.Id, ruleActionType, ruleTargetType);
