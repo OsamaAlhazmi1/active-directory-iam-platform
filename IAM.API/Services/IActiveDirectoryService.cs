@@ -1,7 +1,7 @@
 using System;
-using AD_web_project.DTOs.AD_DTOs;
+using IAM_API.DTOs.AD_DTOs;
 
-namespace AD_web_project.Services;
+namespace IAM_API.Services;
 
 public interface IActiveDirectoryService
 {

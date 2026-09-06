@@ -3,13 +3,13 @@ using System.DirectoryServices.Protocols;
 using System.DirectoryServices;
 using System.Net;
 using System.Net.Sockets;
-using AD_web_project.DTOs.AD_DTOs;
-using AD_web_project.Services.AccessControl;
-using AD_web_project.Models;
-using AD_web_project.Data;
+using IAM_API.DTOs.AD_DTOs;
+using IAM_API.Services.AccessControl;
+using IAM_API.Models;
+using IAM_API.Data;
 using Microsoft.EntityFrameworkCore;
 
-namespace AD_web_project.Services;
+namespace IAM_API.Services;
 
 public class LocalDBService : ILocalDBService
 {

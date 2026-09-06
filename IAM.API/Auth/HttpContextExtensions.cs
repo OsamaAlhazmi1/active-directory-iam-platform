@@ -1,9 +1,9 @@
 using System;
-using AD_web_project.Data;
-using AD_web_project.Models;
+using IAM_API.Data;
+using IAM_API.Models;
 using Microsoft.EntityFrameworkCore;
 
-namespace AD_web_project.Auth;
+namespace IAM_API.Auth;
 
 public static class HttpContextExtensions
 {

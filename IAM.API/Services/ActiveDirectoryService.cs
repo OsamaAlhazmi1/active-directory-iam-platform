@@ -3,9 +3,9 @@ using System.DirectoryServices.Protocols;
 using System.DirectoryServices;
 using System.Net;
 using System.Net.Sockets;
-using AD_web_project.DTOs.AD_DTOs;
+using IAM_API.DTOs.AD_DTOs;
 
-namespace AD_web_project.Services;
+namespace IAM_API.Services;
 
 public class ActiveDirectoryService : IActiveDirectoryService
 {

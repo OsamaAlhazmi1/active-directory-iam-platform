@@ -1,10 +1,10 @@
 using System;
-using AD_web_project.Data;
-using AD_web_project.DTOs;
-using AD_web_project.Services;
+using IAM_API.Data;
+using IAM_API.DTOs;
+using IAM_API.Services;
 using Microsoft.EntityFrameworkCore;
 
-namespace AD_web_project.EndPoints;
+namespace IAM_API.EndPoints;
 
 public static class ActionLogsEndpoints
 {

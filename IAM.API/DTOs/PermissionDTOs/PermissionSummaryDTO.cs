@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace AD_web_project.DTOs.PermissionDTOs;
+namespace IAM_API.DTOs.PermissionDTOs;
 
 public record  PermissionSummaryDTO
 (

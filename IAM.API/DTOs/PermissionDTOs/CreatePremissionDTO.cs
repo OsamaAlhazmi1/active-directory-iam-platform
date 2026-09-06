@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
-using static AD_web_project.Models.Permission;
+using static IAM_API.Models.Permission;
 
-namespace AD_web_project.DTOs;
+namespace IAM_API.DTOs;
 
 public record  CreatePremissionDTO
 (

@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
-using static AD_web_project.Models.ActionRule;
+using static IAM_API.Models.ActionRule;
 
-namespace AD_web_project.DTOs.RulesDTOs;
+namespace IAM_API.DTOs.RulesDTOs;
 
 public record  ActionRuleDetailsDTO
 (

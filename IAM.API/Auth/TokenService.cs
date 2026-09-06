@@ -4,7 +4,7 @@ using System.Security.Claims;
 using System.Text;
 using Microsoft.IdentityModel.Tokens;
 
-namespace AD_web_project.Auth;
+namespace IAM_API.Auth;
 
 public class TokenService
 {

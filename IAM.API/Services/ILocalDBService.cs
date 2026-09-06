@@ -1,7 +1,7 @@
 using System;
-using AD_web_project.Models;
+using IAM_API.Models;
 
-namespace AD_web_project.Services.AccessControl;
+namespace IAM_API.Services.AccessControl;
 
 public interface ILocalDBService
 {

@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
-using AD_web_project.Models;
+using IAM_API.Models;
 
-namespace AD_web_project.DTOs;
+namespace IAM_API.DTOs;
 
 public record  ActionLogsDetailsDTO
 (

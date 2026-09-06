@@ -1,6 +1,6 @@
 using System;
 
-namespace AD_web_project.Auth;
+namespace IAM_API.Auth;
 
 public class JwtOptions
 {

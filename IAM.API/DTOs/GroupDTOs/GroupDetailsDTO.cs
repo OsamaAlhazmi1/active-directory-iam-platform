@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
-using AD_web_project.DTOs.PermissionDTOs;
+using IAM_API.DTOs.PermissionDTOs;
 
-namespace AD_web_project.DTOs.GroupDTOs;
+namespace IAM_API.DTOs.GroupDTOs;
 
 public record GroupDetailsDTO
 (

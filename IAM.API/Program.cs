@@ -1,8 +1,8 @@
-using AD_web_project.Auth;
-using AD_web_project.Data;
-using AD_web_project.EndPoints;
-using AD_web_project.Services;
-using AD_web_project.Services.AccessControl;
+using IAM_API.Auth;
+using IAM_API.Data;
+using IAM_API.EndPoints;
+using IAM_API.Services;
+using IAM_API.Services.AccessControl;
 using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);

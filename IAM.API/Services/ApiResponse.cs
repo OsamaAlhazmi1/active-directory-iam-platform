@@ -1,6 +1,6 @@
 using System;
 
-namespace AD_web_project.Services;
+namespace IAM_API.Services;
 
 public static class ApiResponse
 {

@@ -1,4 +1,4 @@
-namespace AD_web_project.DTOs.AD_DTOs;
+namespace IAM_API.DTOs.AD_DTOs;
 
 public  record ADUserDetailsDTO
 (

@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace AD_web_project.DTOs.AuthDTOs;
+namespace IAM_API.DTOs.AuthDTOs;
 
 
 public record ApiResponseDTO<T>(

@@ -1,9 +1,9 @@
 using System;
-using AD_web_project.DTOs.AD_DTOs;
-using AD_web_project.Models;
-using AD_web_project.Services;
+using IAM_API.DTOs.AD_DTOs;
+using IAM_API.Models;
+using IAM_API.Services;
 
-namespace AD_web_project.EndPoints;
+namespace IAM_API.EndPoints;
 
 public static class ADEndpoints
 {

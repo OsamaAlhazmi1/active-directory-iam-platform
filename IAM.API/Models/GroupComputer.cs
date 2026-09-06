@@ -1,6 +1,6 @@
 using System;
 
-namespace AD_web_project.Models;
+namespace IAM_API.Models;
 
 public class GroupComputer
 {

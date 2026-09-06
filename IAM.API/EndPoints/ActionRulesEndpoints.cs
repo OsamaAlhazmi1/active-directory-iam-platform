@@ -1,13 +1,13 @@
 using System;
-using AD_web_project.Auth;
-using AD_web_project.Data;
-using AD_web_project.DTOs;
-using AD_web_project.DTOs.RulesDTOs;
-using AD_web_project.Models;
-using AD_web_project.Services;
+using IAM_API.Auth;
+using IAM_API.Data;
+using IAM_API.DTOs;
+using IAM_API.DTOs.RulesDTOs;
+using IAM_API.Models;
+using IAM_API.Services;
 using Microsoft.EntityFrameworkCore;
 
-namespace AD_web_project.EndPoints;
+namespace IAM_API.EndPoints;
 
 public static class ActionRulesEndpoints
 {

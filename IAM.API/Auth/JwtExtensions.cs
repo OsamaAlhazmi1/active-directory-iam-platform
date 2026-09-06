@@ -3,7 +3,7 @@ using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 
-namespace AD_web_project.Auth;
+namespace IAM_API.Auth;
 
 public static class JwtExtensions
 {

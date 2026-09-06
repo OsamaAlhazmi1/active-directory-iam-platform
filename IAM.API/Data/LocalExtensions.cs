@@ -1,8 +1,8 @@
 using System;
-using AD_web_project.Models;
+using IAM_API.Models;
 using Microsoft.EntityFrameworkCore;
 
-namespace AD_web_project.Data;
+namespace IAM_API.Data;
 
 public static class LocalExtensions
 {
