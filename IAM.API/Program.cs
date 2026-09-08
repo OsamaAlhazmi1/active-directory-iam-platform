@@ -12,6 +12,7 @@ builder.AddJwtAuthentication();
 builder.AddJwtServices();
 builder.Services.AddScoped<IAccessControlService, AccessControlService>();
 builder.Services.AddScoped<IActiveDirectoryService,ActiveDirectoryService>();
+builder.Services.AddValidation();
 
 builder.Services.AddCors(options =>
 {
